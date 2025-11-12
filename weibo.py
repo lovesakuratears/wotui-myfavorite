@@ -2882,9 +2882,8 @@ class Weibo(object):
             
             if since_date <= today:    # since_date 若为未来则无需执行
                 page_count = self.get_page_count()
-                # 限制只爬取1页内容以快速测试
-                page_count = 1
-                logger.info(f"已限制只爬取1页内容")
+                # 使用实际获取的页数进行爬取
+                logger.info(f"计划爬取 {page_count} 页内容")
                 wrote_count = 0
                 page1 = 0
                 random_pages = random.randint(1, 5)

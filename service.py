@@ -17,8 +17,12 @@ from concurrent.futures import ThreadPoolExecutor
 
 # 1896820725 天津股侠 2024-12-09T16:47:04
 
-DATABASE_PATH = './weibo/weibodata.db'
-print(DATABASE_PATH)
+# 获取项目根目录
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 使用绝对路径确保数据库路径的正确性
+DATABASE_PATH = os.path.join(BASE_DIR, 'weibo', 'weibodata.db')
+print(f"数据库路径: {DATABASE_PATH}")
 
 # 如果日志文件夹不存在，则创建
 if not os.path.isdir("log/"):
@@ -70,9 +74,6 @@ config = {
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # 添加CORS支持，允许所有来源的跨域请求
 
-# 获取项目根目录
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 # 配置静态文件目录
 app.static_folder = os.path.join(BASE_DIR, 'static')
 app.template_folder = BASE_DIR
@@ -87,9 +88,8 @@ tasks = {}
 current_task_id = None
 task_lock = threading.Lock()
 
-# 任务管理
-tasks = {}
-tasks_lock = threading.Lock()
+# 任务状态持久化文件路径
+TASKS_FILE_PATH = os.path.join(BASE_DIR, 'tasks_state.json')
 
 # 定期爬取配置
 schedule_config = {
@@ -102,278 +102,265 @@ schedule_config = {
 CONFIG_FILE_PATH = os.path.join(BASE_DIR, 'config.json')
 
 def get_running_task():
-    """获取当前运行的任务信息，添加超时检测"""
-    if current_task_id and current_task_id in tasks:
-        task = tasks[current_task_id]
-        if task['state'] in ['PENDING', 'PROGRESS']:
-            # 检查任务是否超时（30分钟）
-            created_at = datetime.fromisoformat(task['created_at'])
-            if (datetime.now() - created_at).total_seconds() > 30 * 60:
-                logger.warning(f"任务 {current_task_id} 已超过30分钟未完成，标记为超时")
-                task['state'] = 'TIMEOUT'
-                return None, None
-            return current_task_id, task
+    """获取当前正在运行的任务"""
+    global current_task_id, tasks
+    with task_lock:
+        if current_task_id and current_task_id in tasks:
+            task = tasks[current_task_id]
+            if task.get('state') == 'PROGRESS':
+                logger.info(f"当前有运行中的任务: {current_task_id}, 状态: {task.get('state')}, 进度: {task.get('progress')}%")
+                return current_task_id, task
+    # 遍历所有任务，查找处于PROGRESS状态的任务
+    for task_id, task in tasks.items():
+        if task.get('state') == 'PROGRESS':
+            # 更新current_task_id为找到的运行中任务
+            with task_lock:
+                current_task_id = task_id
+            logger.info(f"找到运行中的任务: {task_id}, 状态: {task.get('state')}, 进度: {task.get('progress')}%")
+            return task_id, task
+    logger.info("没有找到运行中的任务")
     return None, None
 
 def get_config(user_id_list=None):
-    """获取配置，允许动态设置user_id_list"""
-    current_config = config.copy()
+    """获取配置，优先使用用户传入的配置，否则使用全局配置
+    
+    Args:
+        user_id_list: 可选，用户ID列表，如果不提供则使用全局配置
+    
+    Returns:
+        配置字典
+    """
+    # 先尝试从文件加载最新配置
+    try:
+        load_config_file()
+    except Exception as e:
+        logger.error(f"加载配置文件时出错: {e}")
+    
+    # 使用全局配置作为基础
+    config_copy = config.copy()
+    
+    # 如果提供了user_id_list，则覆盖全局配置中的用户ID列表
     if user_id_list:
-        current_config['user_id_list'] = user_id_list
+        logger.info(f"使用自定义用户ID列表: {user_id_list}")
+        config_copy["user_id_list"] = user_id_list
     
-    # 完全避免使用handle_config_renaming函数，直接手动处理参数映射
-    # 这样可以避免任何可能的KeyError异常
-    if "filter" in current_config and "only_crawl_original" not in current_config:
-        current_config["only_crawl_original"] = current_config["filter"]
-        del current_config["filter"]
-    
-    if "result_dir_name" in current_config and "user_id_as_folder_name" not in current_config:
-        current_config["user_id_as_folder_name"] = current_config["result_dir_name"]
-        del current_config["result_dir_name"]
-    
-    # 确保没有'original_live_photo_download'参数，避免后续错误
-    if "original_live_photo_download" in current_config:
-        del current_config["original_live_photo_download"]
-    
-    logger.info("配置加载完成，参数映射处理完毕")
-    return current_config
+    return config_copy
 
 def run_refresh_task(task_id, user_id_list=None):
-    global current_task_id
-    timeout = 30 * 60  # 30分钟超时
-    start_time = time.time()
+    """运行刷新任务
+    
+    Args:
+        task_id: 任务ID
+        user_id_list: 可选，用户ID列表，如果不提供则使用全局配置
+    """
+    # 获取配置，优先使用用户传入的配置，否则使用全局配置
+    task_config = get_config(user_id_list)
+    
+    # 更新任务状态为进行中
+    with task_lock:
+        if task_id in tasks:
+            tasks[task_id]['state'] = 'PROGRESS'
+            tasks[task_id]['progress'] = 0
+            tasks[task_id]['start_time'] = datetime.now().isoformat()
+            # 保存初始任务状态
+            save_tasks_state()
+    
+    logger.info(f"开始执行刷新任务 {task_id}，用户列表: {task_config.get('user_id_list')}")
+    
+    # 创建进度更新线程
+    stop_event = threading.Event()
+    def update_progress():
+        
+        # 进度更新循环
+        while not stop_event.is_set():
+            try:
+                # 每1秒更新一次任务进度到文件，增加保存频率
+                if task_id in tasks:
+                    with task_lock:
+                        # 确保任务状态正确更新
+                        current_time = datetime.now().isoformat()
+                        if 'start_time' not in tasks[task_id]:
+                            tasks[task_id]['start_time'] = current_time
+                        # 更新最后活动时间
+                        tasks[task_id]['last_activity_time'] = current_time
+                save_tasks_state()
+                time.sleep(1)
+            except Exception as e:
+                logger.error(f"更新任务进度时出错: {e}")
+                time.sleep(1)
+    
+    progress_thread = threading.Thread(target=update_progress, daemon=True)
+    progress_thread.start()
+    
+    # 任务结果
+    result = {}
     
     try:
-        tasks[task_id]['state'] = 'PROGRESS'
-        tasks[task_id]['progress'] = 0
+        # 处理配置重命名
+        task_config = handle_config_renaming(task_config)
         
-        # 确保weibo目录存在
-        weibo_dir = os.path.join(BASE_DIR, 'weibo')
-        if not os.path.exists(weibo_dir):
-            os.makedirs(weibo_dir)
-            logger.info(f"Created weibo directory: {weibo_dir}")
+        # 创建微博对象
+        wb = Weibo(task_config)
         
-        config = get_config(user_id_list)
-        # 确保图片下载配置正确传递
-        logger.info(f"Task config: {json.dumps(config, ensure_ascii=False)}")
+        # 设置任务超时时间（例如2小时）
+        timeout = 2 * 60 * 60  # 2小时
+        start_time = time.time()
         
-        # 初始化进度更新定时器 - 更频繁地更新进度
-        def update_progress():
-            if tasks[task_id]['state'] == 'PROGRESS' and time.time() - start_time < timeout:
-                # 根据运行时间更新进度
-                elapsed = time.time() - start_time
-                # 线性增长，但不超过90%
-                new_progress = min(90, int((elapsed / timeout) * 90))
-                if new_progress > tasks[task_id]['progress']:
-                    tasks[task_id]['progress'] = new_progress
-                    logger.info(f"Task {task_id}: 进度更新为 {new_progress}%")
-                # 每10秒更新一次进度，更频繁
-                threading.Timer(10, update_progress).start()
+        # 执行爬取任务
+        wb.run()
         
-        # 启动进度更新
-        update_progress()
-        
-        # 模拟进度更新的中间步骤，更平滑的进度
-        tasks[task_id]['progress'] = 15
-        logger.info(f"Task {task_id}: 初始化完成")
-        time.sleep(0.5)  # 给前端时间显示更新
-        
-        tasks[task_id]['progress'] = 25
-        logger.info(f"Task {task_id}: 配置加载完成")
-        time.sleep(0.5)
-        
-        wb = Weibo(config)
-        tasks[task_id]['progress'] = 35
-        logger.info(f"Task {task_id}: 微博实例创建完成")
-        time.sleep(0.5)
-        
-        tasks[task_id]['progress'] = 45
-        logger.info(f"Task {task_id}: 准备开始爬取")
-        time.sleep(0.5)
-        
-        # 设置超时的start方法调用
-        result_event = threading.Event()
-        error_info = [None]
-        
-        # 增加一个进度更新的线程，定期更新进度
-        progress_update_active = [True]
-        
-        def progress_monitor():
-            while progress_update_active[0] and tasks[task_id]['state'] == 'PROGRESS':
-                # 每5秒更新一次进度，确保用户看到活动
-                time.sleep(5)
-                if tasks[task_id]['state'] == 'PROGRESS':
-                    # 逐步增加进度，避免卡在某一值
-                    current_progress = tasks[task_id]['progress']
-                    if current_progress < 85:
-                        new_progress = min(current_progress + 3, 85)
-                        tasks[task_id]['progress'] = new_progress
-                        logger.info(f"Task {task_id}: 爬取进行中，进度 {new_progress}%")
-        
-        # 启动进度监控线程
-        monitor_thread = threading.Thread(target=progress_monitor)
-        monitor_thread.daemon = True
-        monitor_thread.start()
-        
-        # 增加额外的进度更新点，确保进度不会卡在25%
-        def additional_progress_updater():
-            for p in [30, 35, 40, 45, 50]:
-                time.sleep(2)  # 每2秒更新一次进度
-                if tasks[task_id]['state'] == 'PROGRESS' and tasks[task_id]['progress'] < p:
-                    tasks[task_id]['progress'] = p
-                    logger.info(f"Task {task_id}: 进度更新为 {p}%")
-        
-        # 启动额外的进度更新线程
-        progress_thread = threading.Thread(target=additional_progress_updater)
-        progress_thread.daemon = True
-        progress_thread.start()
-        
-        def start_weibo():
-            try:
-                wb.start()  # 爬取微博信息
-                progress_update_active[0] = False
-                result_event.set()
-            except Exception as e:
-                error_info[0] = e
-                progress_update_active[0] = False
-                result_event.set()
-        
-        # 在单独线程中运行爬取
-        thread = threading.Thread(target=start_weibo)
-        thread.daemon = True
-        thread.start()
-        
-        # 等待完成或超时
-        if not result_event.wait(timeout=timeout):
-            progress_update_active[0] = False
-            logger.error(f"Task {task_id} 执行超时（超过30分钟）")
-            tasks[task_id]['state'] = 'FAILED'
-            tasks[task_id]['error'] = "任务执行超时（超过30分钟）"
-            return
-        
-        # 检查是否有错误
-        if error_info[0]:
-            progress_update_active[0] = False
-            logger.error(f"Task {task_id} 执行出错: {error_info[0]}")
-            tasks[task_id]['state'] = 'FAILED'
-            tasks[task_id]['error'] = str(error_info[0])
-            return
-        
-        # 记录爬取结果信息
-        logger.info(f"Task {task_id} completed successfully")
-        tasks[task_id]['progress'] = 100
-        tasks[task_id]['state'] = 'SUCCESS'
-        tasks[task_id]['result'] = {"message": "微博列表已刷新"}
-        
-    except TimeoutError as te:
-        logger.error(f"Task {task_id} timeout: {te}")
-        tasks[task_id]['state'] = 'FAILED'
-        tasks[task_id]['error'] = str(te)
-    except Exception as e:
-        logger.exception(f"Error in task {task_id}: {e}")
-        tasks[task_id]['state'] = 'FAILED'
-        tasks[task_id]['error'] = str(e)
-    finally:
+        # 更新任务状态为完成
         with task_lock:
+            if task_id in tasks:
+                tasks[task_id]['state'] = 'COMPLETED'
+                tasks[task_id]['progress'] = 100
+                tasks[task_id]['end_time'] = datetime.now().isoformat()
+                tasks[task_id]['result'] = {"message": "爬取任务完成"}
+                save_tasks_state()  # 确保最终状态被保存
+    
+        logger.info(f"任务 {task_id} 完成")
+    
+    except Exception as e:
+        logger.exception(f"任务 {task_id} 执行失败: {e}")
+        # 更新任务状态为失败
+        with task_lock:
+            if task_id in tasks:
+                tasks[task_id]['state'] = 'FAILED'
+                tasks[task_id]['result'] = {"error": str(e)}
+                tasks[task_id]['end_time'] = datetime.now().isoformat()
+                save_tasks_state()  # 确保错误状态被保存
+    
+    finally:
+        # 停止进度更新线程
+        stop_event.set()
+        progress_thread.join(timeout=5)  # 等待进度更新线程结束
+        
+        # 确保最终状态被保存
+        save_tasks_state()
+        # 强制再次保存，确保数据写入
+        time.sleep(0.1)
+        save_tasks_state()
+        
+        # 如果当前任务是全局当前任务，则清除
+        with task_lock:
+            global current_task_id
             if current_task_id == task_id:
                 current_task_id = None
 
 @app.route('/refresh', methods=['POST'])
 def refresh():
-    global current_task_id
-    
-    # 获取请求参数
-    data = request.get_json() or {}
-    
-    # 使用请求中的user_id_list，如果没有则使用配置中的默认值
-    user_id_list = data.get('user_id_list')
-    
-    # 验证参数，如果无效则使用配置中的默认值
-    if not user_id_list or not isinstance(user_id_list, list) or len(user_id_list) == 0:
-        user_id_list = config.get('user_id_list', [])
-        logger.info(f'未提供有效的user_id_list，使用默认配置: {user_id_list}')
-    
-    # 字符串转列表的类型转换逻辑
-    if isinstance(user_id_list, str):
-        logger.info(f'将字符串类型的user_id_list转换为列表: {user_id_list}')
-        # 处理以逗号分隔的多个ID，或单个ID
-        user_id_list = [uid.strip() for uid in user_id_list.split(',') if uid.strip()]
-    
-    # 确保user_id_list是有效的列表类型
-    if not isinstance(user_id_list, list):
-        logger.error(f'Invalid user_id_list parameter format: {type(user_id_list)}')
-        return jsonify({
-            'error': '无效的user_id_list参数格式'
-        }), 400
-    
-    logger.info(f'准备执行任务，使用user_id_list: {user_id_list}')
-    
-    # 检查是否有正在运行的任务，添加强制覆盖选项
-    force = data.get('force', False)
-    
-    with task_lock:
-        running_task_id, running_task = get_running_task()
-        if running_task and not force:
-            return jsonify({
-                'task_id': running_task_id,
-                'status': 'Task already running',
-                'state': running_task['state'],
-                'progress': running_task['progress'],
-                'hint': '可以通过添加 {"force": true} 参数强制创建新任务'
-            }), 409  # 409 Conflict
-        
-        # 如果有运行中的任务且强制创建，记录日志
-        if running_task and force:
-            logger.warning(f"强制创建新任务，中断正在运行的任务 {running_task_id}")
-            running_task['state'] = 'INTERRUPTED'
+    """启动刷新任务"""
+    try:
+        # 获取请求数据
+        data = request.get_json() or {}
         
         # 创建新任务
         task_id = str(uuid.uuid4())
-        tasks[task_id] = {
-            'state': 'PENDING',
-            'progress': 0,
-            'created_at': datetime.now().isoformat(),
-            'user_id_list': user_id_list
-        }
-        current_task_id = task_id
         
-    executor.submit(run_refresh_task, task_id, user_id_list)
-    return jsonify({
-        'task_id': task_id,
-        'status': 'Task started',
-        'state': 'PENDING',
-        'progress': 0,
-        'user_id_list': user_id_list
-    }), 202
+        # 从请求中获取user_id_list，如果没有则使用全局配置
+        user_id_list = data.get('user_id_list')
+        
+        # 创建任务
+        with task_lock:
+            tasks[task_id] = {
+                'state': 'PENDING',
+                'progress': 0,
+                'created_at': datetime.now().isoformat(),
+                'user_id_list': user_id_list if user_id_list else config.get('user_id_list', [])
+            }
+            
+            # 设置为当前任务
+            global current_task_id
+            current_task_id = task_id
+            
+            # 保存任务状态
+            save_tasks_state()
+        
+        # 提交任务到线程池
+        executor.submit(run_refresh_task, task_id, user_id_list)
+        
+        # 返回任务ID
+        return jsonify({
+            'task_id': task_id,
+            'message': '任务已启动'
+        }), 200
+    except Exception as e:
+        logger.exception("启动任务失败")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/task/<task_id>', methods=['GET'])
 def get_task_status(task_id):
-    task = tasks.get(task_id)
-    if not task:
-        return jsonify({'error': 'Task not found'}), 404
-        
-    response = {
-        'state': task['state'],
-        'progress': task['progress']
-    }
-    
-    if task['state'] == 'SUCCESS':
-        response['result'] = task.get('result')
-    elif task['state'] == 'FAILED':
-        response['error'] = task.get('error')
-        
-    return jsonify(response)
+    """获取任务状态"""
+    try:
+        # 首先尝试从内存获取任务状态
+        if task_id in tasks:
+            task = tasks[task_id]
+            response = {
+                "state": task.get('state', 'UNKNOWN'),
+                "progress": task.get('progress', 0)
+            }
+            
+            # 如果任务有结果，添加到响应中
+            if 'result' in task:
+                response['result'] = task['result']
+            # 如果任务有错误，添加到响应中
+            if 'error' in task:
+                response['error'] = task['error']
+            # 添加任务的开始时间和最后活动时间
+            if 'start_time' in task:
+                response['start_time'] = task['start_time']
+            if 'last_activity_time' in task:
+                response['last_activity_time'] = task['last_activity_time']
+            
+            logger.info(f"获取任务 {task_id} 状态: {response['state']}, 进度: {response['progress']}%")
+            return jsonify(response), 200
+        else:
+            # 尝试重新加载任务状态，看是否能找到该任务
+            logger.info(f"尝试从文件加载任务 {task_id} 的状态")
+            load_tasks_state()
+            if task_id in tasks:
+                # 如果重新加载后找到任务，再次获取状态
+                task = tasks[task_id]
+                response = {
+                    "state": task.get('state', 'UNKNOWN'),
+                    "progress": task.get('progress', 0)
+                }
+                if 'result' in task:
+                    response['result'] = task['result']
+                if 'error' in task:
+                    response['error'] = task['error']
+                if 'start_time' in task:
+                    response['start_time'] = task['start_time']
+                if 'last_activity_time' in task:
+                    response['last_activity_time'] = task['last_activity_time']
+                logger.info(f"重新加载后找到任务 {task_id}, 状态: {response['state']}")
+                return jsonify(response), 200
+            logger.warning(f"任务 {task_id} 不存在")
+            return jsonify({"state": "UNKNOWN", "progress": 0, "error": "任务不存在"}), 404
+    except Exception as e:
+        logger.exception(f"获取任务状态时出错: {e}")
+        return jsonify({"state": "UNKNOWN", "progress": 0, "error": f"获取状态失败: {str(e)}"}), 500
+
+@app.route('/config/reload', methods=['POST'])
+def reload_config():
+    """重新加载配置文件"""
+    try:
+        load_config_file()
+        return jsonify({"success": True, "message": "配置已重新加载"})
+    except Exception as e:
+        logger.exception("重新加载配置失败")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/task/cancel', methods=['POST'])
 def cancel_task():
     global current_task_id
     with task_lock:
         if current_task_id and current_task_id in tasks:
-            # 在实际应用中，这里可能需要更复杂的停止机制
-            # 由于我们使用ThreadPoolExecutor，这里只是标记任务为停止状态
-            tasks[current_task_id]['state'] = 'STOPPED'
+            logger.info(f"取消任务 {current_task_id}")
+            tasks[current_task_id]['state'] = 'CANCELLED'
             tasks[current_task_id]['result'] = {"message": "任务已手动停止"}
             current_task_id = None
+            save_tasks_state()
             return jsonify({"message": "任务已停止"})
         else:
             return jsonify({"error": "没有正在运行的任务"}), 404
@@ -460,20 +447,39 @@ def handle_base_config():
     global config
     
     if request.method == 'GET':
-        # 返回当前基础配置
+        # 返回当前基础配置，确保包含所有必要的配置项
         logger.info("获取基础配置请求")
-        return jsonify({
+        # 创建完整的配置响应对象，包含所有可能需要的配置项
+        config_response = {
             "user_id_list": config.get('user_id_list', []),
             "query_list": config.get('query_list', ''),
             "only_crawl_original": config.get('only_crawl_original', 1),
             "since_date": config.get('since_date', 1),
+            "start_page": config.get('start_page', 1),
             "write_mode": config.get('write_mode', ['csv', 'sqlite']),
             "original_pic_download": config.get('original_pic_download', 0),
             "retweet_pic_download": config.get('retweet_pic_download', 0),
             "original_video_download": config.get('original_video_download', 0),
             "retweet_video_download": config.get('retweet_video_download', 0),
+            "original_live_photo_download": config.get('original_live_photo_download', 0),
+            "retweet_live_photo_download": config.get('retweet_live_photo_download', 0),
+            "download_comment": config.get('download_comment', 0),
+            "comment_max_download_count": config.get('comment_max_download_count', 100),
+            "download_repost": config.get('download_repost', 0),
+            "repost_max_download_count": config.get('repost_max_download_count', 100),
+            "user_id_as_folder_name": config.get('user_id_as_folder_name', 0),
+            "remove_html_tag": config.get('remove_html_tag', 1),
             "cookie": config.get('cookie', '')
-        }), 200
+        }
+        
+        # 添加额外的配置项，确保前端能获取到所有需要的配置
+        if 'mysql_config' in config:
+            config_response['mysql_config'] = config['mysql_config']
+        if 'mongodb_URI' in config:
+            config_response['mongodb_URI'] = config['mongodb_URI']
+        
+        logger.info(f"返回配置: {config_response.keys()}")
+        return jsonify(config_response), 200
     
     elif request.method == 'PUT':
         # 更新基础配置
@@ -553,6 +559,136 @@ def handle_database_config():
             logger.error(f"更新数据库配置失败: {e}")
             # 提供更详细的错误信息
             return jsonify({"success": False, "error": f"更新配置失败: {str(e)}"}), 500
+
+def save_tasks_state():
+    """保存任务状态到文件，增强的版本"""
+    try:
+        # 创建目录（如果不存在）
+        tasks_dir = os.path.dirname(TASKS_FILE_PATH)
+        if tasks_dir and not os.path.exists(tasks_dir):
+            os.makedirs(tasks_dir, exist_ok=True)
+            logger.info(f"创建任务状态目录: {tasks_dir}")
+        
+        # 使用锁保护任务数据的读取
+        with task_lock:
+            # 创建一个任务数据的深拷贝，避免在保存过程中数据被修改
+            tasks_copy = {}
+            for task_id, task_data in tasks.items():
+                tasks_copy[task_id] = task_data.copy()
+            
+            tasks_data = {
+                'tasks': tasks_copy,
+                'current_task_id': current_task_id,
+                'last_updated': datetime.now().isoformat()
+            }
+        
+        # 文件写入操作
+        temp_file = TASKS_FILE_PATH + '.tmp'
+        with open(temp_file, 'w', encoding='utf-8') as f:
+            json.dump(tasks_data, f, ensure_ascii=False, indent=2)
+        
+        # 原子性替换文件，避免写入过程中断导致文件损坏
+        os.replace(temp_file, TASKS_FILE_PATH)
+        
+        logger.info(f"任务状态已成功保存到文件: {TASKS_FILE_PATH}")
+        return True
+    except PermissionError as pe:
+        logger.error(f"保存任务状态失败 - 权限错误: {pe}")
+        logger.error(f"检查文件权限: {TASKS_FILE_PATH}")
+        return False
+    except IOError as ioe:
+        logger.error(f"保存任务状态失败 - IO错误: {ioe}")
+        return False
+    except Exception as e:
+        logger.exception(f"保存任务状态失败 - 未预期的错误")
+        return False
+
+def load_tasks_state():
+    """从文件加载任务状态，增强的版本"""
+    global tasks, current_task_id
+    try:
+        if os.path.exists(TASKS_FILE_PATH):
+            # 检查文件大小是否合理
+            file_size = os.path.getsize(TASKS_FILE_PATH)
+            if file_size > 50 * 1024 * 1024:  # 限制文件大小为50MB
+                logger.error(f"任务状态文件过大: {file_size} 字节，跳过加载")
+                return False
+            
+            # 读取文件内容
+            with open(TASKS_FILE_PATH, 'r', encoding='utf-8') as f:
+                tasks_data = json.load(f)
+            
+            # 验证数据格式
+            if not isinstance(tasks_data, dict):
+                logger.error("任务状态文件格式错误: 不是有效的JSON对象")
+                return False
+            
+            # 获取任务数据，确保是字典类型
+            loaded_tasks = tasks_data.get('tasks', {})
+            if not isinstance(loaded_tasks, dict):
+                logger.error("任务状态文件格式错误: tasks字段不是有效的字典")
+                loaded_tasks = {}
+            
+            # 验证和清理任务数据
+            valid_tasks = {}
+            for task_id, task_data in loaded_tasks.items():
+                if isinstance(task_data, dict):
+                    # 确保任务有必要的字段
+                    if 'state' not in task_data:
+                        task_data['state'] = 'UNKNOWN'
+                    if 'progress' not in task_data:
+                        task_data['progress'] = 0
+                    # 对于正在进行中的任务，确保状态正确
+                    if task_data.get('state') == 'PROGRESS' and 'end_time' not in task_data:
+                        logger.info(f"恢复进行中任务: {task_id}")
+                    valid_tasks[task_id] = task_data
+                else:
+                    logger.warning(f"跳过无效的任务数据: {task_id}")
+            
+            # 使用锁保护全局变量的更新
+            with task_lock:
+                # 先清空现有任务，避免任务重复
+                tasks.clear()
+                # 加载验证过的任务
+                tasks.update(valid_tasks)
+                
+                # 验证current_task_id是否存在于加载的任务中
+                loaded_task_id = tasks_data.get('current_task_id', None)
+                if loaded_task_id and loaded_task_id in tasks:
+                    task = tasks[loaded_task_id]
+                    # 只有任务状态为PROGRESS或PENDING时才恢复为当前任务
+                    if task.get('state') in ['PROGRESS', 'PENDING']:
+                        current_task_id = loaded_task_id
+                        logger.info(f"恢复当前任务ID: {current_task_id}")
+                    else:
+                        current_task_id = None
+                else:
+                    # 如果current_task_id无效，查找正在运行的任务
+                    current_task_id = None
+                    for task_id, task in tasks.items():
+                        if task.get('state') in ['PROGRESS', 'PENDING']:
+                            current_task_id = task_id
+                            logger.info(f"找到并设置当前任务ID: {current_task_id}")
+                            break
+            
+            last_updated = tasks_data.get('last_updated', '未知')
+            logger.info(f"任务状态已从文件加载，共 {len(tasks)} 个任务，最后更新时间: {last_updated}")
+            return True
+        else:
+            logger.info(f"任务状态文件不存在: {TASKS_FILE_PATH}")
+            return False
+    except json.JSONDecodeError as je:
+        logger.error(f"任务状态文件JSON解析错误: {je}")
+        return False
+    except PermissionError as pe:
+        logger.error(f"加载任务状态失败 - 权限错误: {pe}")
+        return False
+    except IOError as ioe:
+        logger.error(f"加载任务状态失败 - IO错误: {ioe}")
+        return False
+    except Exception as e:
+        logger.exception(f"加载任务状态失败 - 未预期的错误")
+        return False
 
 def save_config_file():
     """保存配置到文件"""
@@ -651,6 +787,7 @@ def schedule_refresh():
                     with task_lock:
                         global current_task_id
                         current_task_id = task_id
+                    save_tasks_state()  # 保存新创建的任务状态
                     executor.submit(run_refresh_task, task_id, config['user_id_list'])
                     logger.info(f"Scheduled task {task_id} started")
             
@@ -718,14 +855,25 @@ def static_files(filename):
     """静态文件路由"""
     return send_from_directory(app.static_folder, filename)
 
+@app.route('/<path:filename>')
+def serve_html_files(filename):
+    """提供HTML文件的路由"""
+    if filename.endswith('.html'):
+        file_path = os.path.join(BASE_DIR, filename)
+        if os.path.exists(file_path):
+            return send_from_directory(BASE_DIR, filename)
+    # 如果不是HTML文件或文件不存在，返回404
+    return '', 404
+
 if __name__ == "__main__":
-    # 加载配置文件
+    # 加载配置
     load_config_file()
+    load_tasks_state()  # 启动时加载任务状态
     
     # 启动定时任务线程
     scheduler_thread = threading.Thread(target=schedule_refresh, daemon=True)
     scheduler_thread.start()
-    
-    logger.info("服务启动")
-    # 启动Flask应用
-    app.run(debug=True, use_reloader=False)  # 关闭reloader避免启动两次
+
+    logger.info("服务启动 (直接运行模式)")
+    # 使用app.run启动服务
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)  # 关闭reloader避免启动两次，明确指定host和port

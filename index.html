@@ -4,8 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我推 - My Favorite</title>
+    <!-- 网站图标 - 使用ICO文件 -->
+    <link rel="icon" type="image/x-icon" href="/static/icons/logo.ico">
+    <link rel="icon" type="image/svg+xml" href="/static/icons/logo.svg">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 不使用CDN，使用简单的内联样式替代图标 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#8B5CF6'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- 添加Font Awesome图标库 -->
+    <!-- 移除外部CDN依赖，使用内联图标 -->
+    <style>
+        /* 简单的图标替代方案 */
+        .icon { display: inline-block; width: 16px; height: 16px; text-align: center; line-height: 16px; }
+    </style>
+    <!-- 简单的额外样式 -->
     <style>
         /* 简单的图标替代样式 */
         .icon {
@@ -197,15 +218,16 @@
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-all duration-300">
     <!-- 顶部导航栏 -->
     <header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300">
-        <div class="container mx-auto px-4 flex items-center justify-between h-16">
+        <div class="flex items-center justify-between h-16 pl-4 pr-4">
             <div class="flex items-center space-x-2">
-                <i class="fa fa-weibo text-xl text-red-500"></i>
+                <!-- 使用新的SVG文件作为logo -->
+                <img src="/static/icons/logo.svg" alt="Logo" class="w-8 h-8 rounded-md">
                 <h1 class="text-xl font-bold text-primary dark:text-secondary">我推 - My Favorite</h1>
             </div>
             <div class="flex items-center space-x-4">
                 <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                    <i class="fa fa-moon-o dark:hidden"></i>
-                    <i class="fa fa-sun-o hidden dark:block"></i>
+                    <span class="dark:hidden">🌙</span>
+                    <span class="hidden dark:block">☀️</span>
                 </button>
                 <div class="relative">
                     <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full"></span>
@@ -844,9 +866,7 @@
             `;
             document.getElementById('results-table').innerHTML = resultsHtml;
             
-            // 加载配置数据
-            document.getElementById('user-id-list').value = '1669879400, 1729370543, 1266321885';
-            document.getElementById('since-date-days').value = '7';
+            // 配置数据将通过loadSavedConfig函数从服务器或本地存储加载，不再使用硬编码值
             
             // 加载数据库配置
             document.getElementById('mysql-host').value = 'localhost';
@@ -1181,12 +1201,24 @@
                     const scheduleConfig = await scheduleResponse.json();
                     
                     return {
-                        query_list: baseConfig.query_list,
-                        cookie: baseConfig.cookie,
-                        mysql_config: dbConfig.mysql_config,
-                        mongodb_URI: dbConfig.mongodb_URI,
-                        schedule_config: scheduleConfig
-                    };
+                    query_list: baseConfig.query_list,
+                    cookie: baseConfig.cookie,
+                    user_id_list: baseConfig.user_id_list,
+                    since_date: baseConfig.since_date,
+                    only_crawl_original: baseConfig.only_crawl_original,
+                    write_mode: baseConfig.write_mode,
+                    original_pic_download: baseConfig.original_pic_download,
+                    retweet_pic_download: baseConfig.retweet_pic_download,
+                    original_video_download: baseConfig.original_video_download,
+                    retweet_video_download: baseConfig.retweet_video_download,
+                    download_comment: baseConfig.download_comment,
+                    download_repost: baseConfig.download_repost,
+                    remove_html_tag: baseConfig.remove_html_tag,
+                    user_id_as_folder_name: baseConfig.user_id_as_folder_name,
+                    mysql_config: dbConfig.mysql_config,
+                    mongodb_URI: dbConfig.mongodb_URI,
+                    schedule_config: scheduleConfig
+                };
                 }
                 
                 return null;
@@ -1202,6 +1234,26 @@
             const serverConfig = await loadConfigFromServer();
             
             if (serverConfig) {
+                console.log('从服务器加载的配置:', serverConfig);
+                
+                // 设置基础配置 - 关键项：用户ID列表和天数
+                const userIdListElem = document.getElementById('user-id-list');
+                if (userIdListElem && serverConfig.user_id_list) {
+                    // 确保将数组格式转换为逗号分隔的字符串
+                    const userIdStr = Array.isArray(serverConfig.user_id_list) 
+                        ? serverConfig.user_id_list.join(', ')
+                        : String(serverConfig.user_id_list);
+                    userIdListElem.value = userIdStr;
+                    console.log('已设置user_id_list值(从服务器):', userIdStr);
+                }
+                
+                // 设置天数 - 使用since_date
+                const sinceDateElem = document.getElementById('since-date-days');
+                if (sinceDateElem && serverConfig.since_date) {
+                    sinceDateElem.value = serverConfig.since_date;
+                    console.log('已设置since_date值(从服务器):', serverConfig.since_date);
+                }
+                
                 // 设置MySQL配置
                 if (serverConfig.mysql_config) {
                     if (serverConfig.mysql_config.host) document.getElementById('mysql-host').value = serverConfig.mysql_config.host;
@@ -1214,9 +1266,18 @@
                 // 设置MongoDB配置
                 if (serverConfig.mongodb_URI) document.getElementById('mongodb-uri').value = serverConfig.mongodb_URI;
                 
-                // 设置基础配置
+                // 设置其他基础配置
                 if (serverConfig.query_list) document.getElementById('query-list').value = serverConfig.query_list;
                 if (serverConfig.cookie) document.getElementById('cookie').value = serverConfig.cookie;
+                if (serverConfig.only_crawl_original !== undefined) document.getElementById('only-crawl-original').value = serverConfig.only_crawl_original;
+                
+                // 设置下载选项
+                if (serverConfig.original_pic_download !== undefined) document.getElementById('original-pic').checked = serverConfig.original_pic_download;
+                if (serverConfig.retweet_pic_download !== undefined) document.getElementById('retweet-pic').checked = serverConfig.retweet_pic_download;
+                if (serverConfig.original_video_download !== undefined) document.getElementById('original-video').checked = serverConfig.original_video_download;
+                if (serverConfig.retweet_video_download !== undefined) document.getElementById('retweet-video').checked = serverConfig.retweet_video_download;
+                if (serverConfig.comment_download !== undefined) document.getElementById('download-comment').checked = serverConfig.comment_download;
+                if (serverConfig.repost_download !== undefined) document.getElementById('download-repost').checked = serverConfig.repost_download;
                 
                 // 设置定期爬取配置
                 if (serverConfig.schedule_config) {
@@ -1238,7 +1299,14 @@
                         
                         // 设置基本配置
                         const userIdListElem = document.getElementById('user-id-list');
-                        if (userIdListElem && config.user_id_list) userIdListElem.value = config.user_id_list;
+                        if (userIdListElem && config.user_id_list) {
+                            // 确保将数组格式转换为逗号分隔的字符串
+                            const userIdStr = Array.isArray(config.user_id_list) 
+                                ? config.user_id_list.join(', ') 
+                                : String(config.user_id_list);
+                            userIdListElem.value = userIdStr;
+                            console.log('已设置user_id_list值:', userIdStr);
+                        }
                         
                         const queryListElem = document.getElementById('query-list');
                         if (queryListElem && config.query_list) queryListElem.value = config.query_list;
@@ -1247,7 +1315,10 @@
                         if (onlyCrawlOriginalElem && config.only_crawl_original !== undefined) onlyCrawlOriginalElem.value = config.only_crawl_original;
                         
                         const sinceDateElem = document.getElementById('since-date-days');
-                        if (sinceDateElem && config.since_date) sinceDateElem.value = config.since_date;
+                        if (sinceDateElem && config.since_date) {
+                            sinceDateElem.value = config.since_date;
+                            console.log('已设置since_date值:', config.since_date);
+                        }
                         
                         const cookieElem = document.getElementById('cookie');
                         if (cookieElem && config.cookie) cookieElem.value = config.cookie;
@@ -1345,6 +1416,27 @@
         (async function() {
             await loadSavedConfig();
         })();
+        
+        // 读取配置按钮点击事件
+        document.addEventListener('DOMContentLoaded', () => {
+            // 创建读取配置按钮
+            const configSection = document.querySelector('#config');
+            if (configSection) {
+                const sectionHeader = configSection.querySelector('h2');
+                if (sectionHeader) {
+                    const readConfigBtn = document.createElement('button');
+                    readConfigBtn.id = 'read-config';
+                    readConfigBtn.className = 'ml-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors';
+                    readConfigBtn.textContent = '读取配置';
+                    readConfigBtn.onclick = async () => {
+                        addLog('[INFO] 正在读取配置...', 'info');
+                        await loadSavedConfig();
+                        addLog('[INFO] 配置读取完成', 'info');
+                    };
+                    sectionHeader.parentNode.insertBefore(readConfigBtn, sectionHeader.nextSibling);
+                }
+            }
+        });
 
         // 开始爬取任务
         document.getElementById('start-task').addEventListener('click', async () => {
@@ -1559,6 +1651,8 @@
 
         // 初始化页面
         document.addEventListener('DOMContentLoaded', () => {
+            // 确保DOM加载完成后读取配置
+            loadSavedConfig();
             loadMockData();
             
             // 添加平滑滚动
