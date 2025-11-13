@@ -1,12 +1,5 @@
 {
-  "tasks": {
-    "3cbcdb30-54e8-409d-92ca-3e275d3be061": {
-      "state": "PROGRESS",
-      "progress": 85,
-      "start_time": "2025-11-12T16:28:53.019339",
-      "user_id_list": null
-    }
-  },
-  "current_task_id": "3cbcdb30-54e8-409d-92ca-3e275d3be061",
-  "last_updated": "2025-11-12T16:30:00.050578"
+  "tasks": {},
+  "current_task_id": null,
+  "last_updated": "2023-01-01T00:00:00.000Z"
 }
