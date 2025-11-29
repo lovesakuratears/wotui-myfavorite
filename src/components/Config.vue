@@ -10,6 +10,9 @@ const writeCsv = ref(true)
 const writeJson = ref(false)
 const databaseType = ref('sqlite')
 
+// Cookie获取步骤显示状态
+const showCookieSteps = ref(false)
+
 // 下载选项
 const originalPic = ref(true)
 const retweetPic = ref(false)
@@ -51,6 +54,10 @@ onMounted(() => {
 async function fetchConfig() {
   try {
     const response = await fetch('/config')
+    // 检查响应状态，只有200才尝试解析JSON
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
     const configData = await response.json()
     
     // 基本配置
@@ -184,65 +191,68 @@ function handleDatabaseChange() {
 <template>
   <!-- 配置管理区域 -->
   <section id="config" class="mb-12">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover-scale">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover-scale relative overflow-hidden">
+      <!-- 右上角保存配置按钮 -->
+      <div class="absolute top-6 right-6 z-10">
+        <button id="save-config" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95" @click="saveConfig">
+          <i class="fa fa-save mr-2"></i>保存配置
+        </button>
+      </div>
       <h2 class="text-2xl font-bold mb-6">配置管理</h2>
       <div class="mb-8">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-semibold">基本配置</h3>
-          <button id="save-config" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors" @click="saveConfig">
-            <i class="fa fa-save mr-2"></i>保存配置
-          </button>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">用户ID列表</label>
-            <textarea id="user-id-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" rows="3" placeholder="请输入用户ID，多个ID用逗号分隔或换行" v-model="userIdList"></textarea>
+            <textarea id="user-id-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" rows="3" placeholder="请输入用户ID，多个ID用逗号分隔或换行" v-model="userIdList"></textarea>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">也可以输入user_id_list.txt文件路径</p>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">搜索关键词列表</label>
-            <textarea id="query-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" rows="3" placeholder="请输入搜索关键词，多个关键词用逗号分隔或换行" v-model="queryList"></textarea>
+            <textarea id="query-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" rows="3" placeholder="请输入搜索关键词，多个关键词用逗号分隔或换行" v-model="queryList"></textarea>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">设置后将按关键词搜索微博</p>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">爬取模式</label>
-            <select id="only-crawl-original" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" v-model="onlyCrawlOriginal">
+            <select id="only-crawl-original" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" v-model="onlyCrawlOriginal">
               <option value="0">爬取全部微博</option>
               <option value="1">仅爬取原创微博</option>
             </select>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">起始日期</label>
             <div class="flex space-x-2">
-              <input type="number" id="since-date-days" class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="天数" v-model="sinceDateDays">
+              <input type="number" id="since-date-days" class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="天数" v-model="sinceDateDays">
               <span class="flex items-center text-gray-500">天前</span>
             </div>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">文件存储（可多选）</label>
             <div class="grid grid-cols-2 gap-2 mb-4">
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="write-csv" class="rounded text-primary focus:ring-primary/50" v-model="writeCsv">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="write-csv" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="writeCsv">
                 <span>CSV</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="write-json" class="rounded text-primary focus:ring-primary/50" v-model="writeJson">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="write-json" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="writeJson">
                 <span>JSON</span>
               </label>
             </div>
             
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">数据库存储（单选）</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <label class="flex items-center space-x-2">
-                <input type="radio" name="database" id="db-sqlite" class="rounded-full text-primary focus:ring-primary/50" v-model="databaseType" value="sqlite" @change="handleDatabaseChange">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="radio" name="database" id="db-sqlite" class="rounded-full text-primary focus:ring-primary/50 cursor-pointer" v-model="databaseType" value="sqlite" @change="handleDatabaseChange">
                 <span>SQLite</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="radio" name="database" id="db-mysql" class="rounded-full text-primary focus:ring-primary/50" v-model="databaseType" value="mysql" @change="handleDatabaseChange">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="radio" name="database" id="db-mysql" class="rounded-full text-primary focus:ring-primary/50 cursor-pointer" v-model="databaseType" value="mysql" @change="handleDatabaseChange">
                 <span>MySQL</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="radio" name="database" id="db-mongodb" class="rounded-full text-primary focus:ring-primary/50" v-model="databaseType" value="mongodb" @change="handleDatabaseChange">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="radio" name="database" id="db-mongodb" class="rounded-full text-primary focus:ring-primary/50 cursor-pointer" v-model="databaseType" value="mongodb" @change="handleDatabaseChange">
                 <span>MongoDB</span>
               </label>
             </div>
@@ -253,49 +263,49 @@ function handleDatabaseChange() {
       <div class="mb-8">
         <h3 class="text-lg font-semibold mb-4">下载选项</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">图片下载</label>
             <div class="space-y-2">
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="original-pic" class="rounded text-primary focus:ring-primary/50" v-model="originalPic">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="original-pic" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="originalPic">
                 <span>原创微博图片</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="retweet-pic" class="rounded text-primary focus:ring-primary/50" v-model="retweetPic">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="retweet-pic" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="retweetPic">
                 <span>转发微博图片</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="original-live-photo" class="rounded text-primary focus:ring-primary/50" v-model="originalLivePhoto">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="original-live-photo" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="originalLivePhoto">
                 <span>原创微博实况照片</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="retweet-live-photo" class="rounded text-primary focus:ring-primary/50" v-model="retweetLivePhoto">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="retweet-live-photo" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="retweetLivePhoto">
                 <span>转发微博实况照片</span>
               </label>
             </div>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">视频下载</label>
             <div class="space-y-2">
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="original-video" class="rounded text-primary focus:ring-primary/50" v-model="originalVideo">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="original-video" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="originalVideo">
                 <span>原创微博视频</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="retweet-video" class="rounded text-primary focus:ring-primary/50" v-model="retweetVideo">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="retweet-video" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="retweetVideo">
                 <span>转发微博视频</span>
               </label>
             </div>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">评论与转发</label>
             <div class="space-y-2">
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="download-comment" class="rounded text-primary focus:ring-primary/50" v-model="downloadComment">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="download-comment" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="downloadComment">
                 <span>下载评论</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="download-repost" class="rounded text-primary focus:ring-primary/50" v-model="downloadRepost">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="download-repost" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="downloadRepost">
                 <span>下载转发</span>
               </label>
             </div>
@@ -306,29 +316,54 @@ function handleDatabaseChange() {
       <div class="mb-8">
         <h3 class="text-lg font-semibold mb-4">高级配置</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cookie</label>
-            <div class="relative">
-              <textarea id="cookie" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" rows="2" placeholder="your cookie" v-model="cookie"></textarea>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
+            <div class="flex justify-between items-center mb-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cookie</label>
               <button 
-                id="get-cookie-btn" 
-                class="absolute top-2 right-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
-                @click="$emit('get-cookie')"
+                id="show-cookie-steps" 
+                class="px-3 py-1 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all duration-300 text-xs font-medium rounded shadow-sm hover:shadow-md"
+                @click="showCookieSteps = !showCookieSteps"
               >
-                <i class="fa fa-magic mr-1"></i>获取Cookie
+                <i class="fa fa-question-circle mr-1"></i>{{ showCookieSteps ? '隐藏' : '显示' }}获取步骤
               </button>
             </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">点击按钮自动获取微博Cookie，无需手动复制</p>
+            <div class="relative">
+              <textarea id="cookie" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" rows="2" placeholder="your cookie" v-model="cookie"></textarea>
+            </div>
+            <div class="mt-4" v-if="showCookieSteps">
+              <h4 class="text-sm font-semibold mb-2">如何获取cookie（可选）</h4>
+              <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li>用Chrome打开 <a href="https://passport.weibo.cn/signin/login" target="_blank" class="text-primary hover:underline">https://passport.weibo.cn/signin/login</a>；</li>
+                <li>输入微博的用户名、密码，登录；</li>
+                <li>登录成功后会跳转到 <a href="https://m.weibo.cn" target="_blank" class="text-primary hover:underline">https://m.weibo.cn</a>；</li>
+                <li>按F12键打开Chrome开发者工具，在地址栏输入并跳转到 <a href="https://weibo.cn" target="_blank" class="text-primary hover:underline">https://weibo.cn</a>；</li>
+                <li>依此点击Chrome开发者工具中的Network->Name中的weibo.cn->Headers->Request Headers，"Cookie:"后的值即为我们要找的cookie值，复制即可。</li>
+              </ol>
+              <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                  <img src="/img/cookie1.png" alt="Cookie获取步骤1" class="w-full h-auto">
+                  <div class="p-2 text-xs text-center bg-gray-50 dark:bg-gray-800">步骤1：登录微博</div>
+                </div>
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                  <img src="/img/cookie2.png" alt="Cookie获取步骤2" class="w-full h-auto">
+                  <div class="p-2 text-xs text-center bg-gray-50 dark:bg-gray-800">步骤2：跳转到weibo.cn</div>
+                </div>
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                  <img src="/img/cookie3.png" alt="Cookie获取步骤3" class="w-full h-auto">
+                  <div class="p-2 text-xs text-center bg-gray-50 dark:bg-gray-800">步骤3：复制Cookie值</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">其他选项</label>
             <div class="space-y-2">
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="remove-html-tag" class="rounded text-primary focus:ring-primary/50" v-model="removeHtmlTag">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="remove-html-tag" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="removeHtmlTag">
                 <span>移除HTML标签</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="checkbox" id="user-id-as-folder" class="rounded text-primary focus:ring-primary/50" v-model="userIdAsFolder">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="checkbox" id="user-id-as-folder" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="userIdAsFolder">
                 <span>使用用户ID作为文件夹名</span>
               </label>
             </div>
@@ -337,80 +372,84 @@ function handleDatabaseChange() {
       </div>
 
       <div class="mb-8" v-if="enableMysql">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold">MySQL配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
-          <label class="flex items-center space-x-2">
-            <input type="checkbox" id="enable-mysql" class="rounded text-primary focus:ring-primary/50" v-model="enableMysql">
-            <span>启用MySQL</span>
-          </label>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">主机</label>
-            <input type="text" id="mysql-host" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="localhost" v-model="mysqlHost">
+        <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">MySQL配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
+            <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+              <input type="checkbox" id="enable-mysql" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="enableMysql">
+              <span>启用MySQL</span>
+            </label>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">端口</label>
-            <input type="number" id="mysql-port" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="3306" v-model="mysqlPort">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">用户名</label>
-            <input type="text" id="mysql-user" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="root" v-model="mysqlUser">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">密码</label>
-            <input type="password" id="mysql-password" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="password" v-model="mysqlPassword">
-          </div>
-          <div class="md:col-span-2 lg:col-span-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字符集</label>
-            <input type="text" id="mysql-charset" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="utf8mb4" v-model="mysqlCharset">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">主机</label>
+              <input type="text" id="mysql-host" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="localhost" v-model="mysqlHost">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">端口</label>
+              <input type="number" id="mysql-port" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="3306" v-model="mysqlPort">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">用户名</label>
+              <input type="text" id="mysql-user" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="root" v-model="mysqlUser">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">密码</label>
+              <input type="password" id="mysql-password" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="password" v-model="mysqlPassword">
+            </div>
+            <div class="md:col-span-2 lg:col-span-4">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字符集</label>
+              <input type="text" id="mysql-charset" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="utf8mb4" v-model="mysqlCharset">
+            </div>
           </div>
         </div>
       </div>
 
       <div class="mb-8" v-if="enableMongodb">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold">MongoDB配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
-          <label class="flex items-center space-x-2">
-            <input type="checkbox" id="enable-mongodb" class="rounded text-primary focus:ring-primary/50" v-model="enableMongodb">
-            <span>启用MongoDB</span>
-          </label>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">MongoDB URI</label>
-          <input type="text" id="mongodb-uri" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]" v-model="mongodbUri">
+        <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">MongoDB配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
+            <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+              <input type="checkbox" id="enable-mongodb" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="enableMongodb">
+              <span>启用MongoDB</span>
+            </label>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">MongoDB URI</label>
+            <input type="text" id="mongodb-uri" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]" v-model="mongodbUri">
+          </div>
         </div>
       </div>
 
       <div class="mb-8">
         <h3 class="text-lg font-semibold mb-4">定期自动爬取设置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">自动爬取频率</label>
             <div class="space-y-2">
-              <label class="flex items-center space-x-2">
-                <input type="radio" name="schedule-frequency" value="hourly" class="text-primary focus:ring-primary/50" v-model="scheduleFrequency">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="radio" name="schedule-frequency" value="hourly" class="text-primary focus:ring-primary/50 cursor-pointer" v-model="scheduleFrequency">
                 <span>每小时</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="radio" name="schedule-frequency" value="daily" class="text-primary focus:ring-primary/50" v-model="scheduleFrequency">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="radio" name="schedule-frequency" value="daily" class="text-primary focus:ring-primary/50 cursor-pointer" v-model="scheduleFrequency">
                 <span>每天</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="radio" name="schedule-frequency" value="weekly" class="text-primary focus:ring-primary/50" v-model="scheduleFrequency">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="radio" name="schedule-frequency" value="weekly" class="text-primary focus:ring-primary/50 cursor-pointer" v-model="scheduleFrequency">
                 <span>每周</span>
               </label>
-              <label class="flex items-center space-x-2">
-                <input type="radio" name="schedule-frequency" value="custom" class="text-primary focus:ring-primary/50" v-model="scheduleFrequency">
+              <label class="flex items-center space-x-2 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+                <input type="radio" name="schedule-frequency" value="custom" class="text-primary focus:ring-primary/50 cursor-pointer" v-model="scheduleFrequency">
                 <span>自定义</span>
               </label>
             </div>
           </div>
-          <div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg transition-all duration-300 hover:shadow-sm">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">自定义间隔（分钟）</label>
-            <input type="number" id="custom-interval" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="60" value="60" v-model="customInterval">
-            <label class="flex items-center space-x-2 mt-4">
-              <input type="checkbox" id="enable-schedule" class="rounded text-primary focus:ring-primary/50" v-model="enableSchedule">
+            <input type="number" id="custom-interval" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-300 hover:border-primary/50" placeholder="60" value="60" v-model="customInterval">
+            <label class="flex items-center space-x-2 mt-4 cursor-pointer hover:text-primary dark:hover:text-secondary transition-colors duration-300">
+              <input type="checkbox" id="enable-schedule" class="rounded text-primary focus:ring-primary/50 cursor-pointer" v-model="enableSchedule">
               <span>启用定期自动爬取</span>
             </label>
           </div>

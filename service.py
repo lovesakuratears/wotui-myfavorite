@@ -565,7 +565,22 @@ def reload_config():
 @app.route('/')
 def index():
     """首页"""
-    return render_template('index.html')
+    # 检查dist目录是否存在，如果存在则返回dist/index.html
+    dist_index_path = os.path.join(BASE_DIR, 'dist', 'index.html')
+    if os.path.exists(dist_index_path):
+        return send_from_directory(os.path.join(BASE_DIR, 'dist'), 'index.html')
+    else:
+        return render_template('index.html')
+
+# SPA路由处理 - 所有未匹配的路由都返回index.html
+@app.route('/<path:path>')
+def catch_all(path):
+    """处理SPA的所有路由"""
+    dist_index_path = os.path.join(BASE_DIR, 'dist', 'index.html')
+    if os.path.exists(dist_index_path):
+        return send_from_directory(os.path.join(BASE_DIR, 'dist'), 'index.html')
+    else:
+        return render_template('index.html')
 
 # 获取结果列表
 @app.route('/results', methods=['GET'])

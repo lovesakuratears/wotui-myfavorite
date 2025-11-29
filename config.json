@@ -7,13 +7,14 @@
   "since_date": "14",
   "start_page": 1,
   "write_mode": [
-    "csv",
-    "sqlite"
+    "csv"
   ],
-  "original_pic_download": 0,
-  "retweet_pic_download": 0,
+  "original_pic_download": 1,
+  "retweet_pic_download": 1,
   "original_video_download": 0,
   "retweet_video_download": 0,
+  "original_live_photo_download": 1,
+  "retweet_live_photo_download": 1,
   "download_comment": 0,
   "comment_max_download_count": 100,
   "download_repost": 0,
@@ -32,5 +33,10 @@
   "post_config": {
     "api_url": "",
     "api_token": ""
+  },
+  "schedule_config": {
+    "enabled": false,
+    "interval": "daily",
+    "custom_interval": 60
   }
 }

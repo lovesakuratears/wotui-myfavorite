@@ -7,7 +7,6 @@ import Results from './components/Results.vue'
 import About from './components/About.vue'
 import PhotoWall from './components/PhotoWall.vue'
 import ImageViewer from './components/ImageViewer.vue'
-import WeiboLogin from './components/WeiboLogin.vue'
 
 // 当前激活的导航项
 const activeNav = ref('dashboard')
@@ -24,26 +23,7 @@ const modalContent = ref('')
 const showImageViewer = ref(false)
 const currentUser = ref(null)
 
-// 微博登录弹窗状态
-const showWeiboLogin = ref(false)
-const cookieFromLogin = ref('')
 
-// 显示微博登录弹窗
-const showWeiboLoginModal = () => {
-  showWeiboLogin.value = true
-}
-
-// 关闭微博登录弹窗
-const closeWeiboLoginModal = () => {
-  showWeiboLogin.value = false
-}
-
-// 处理获取到的cookie
-const handleCookieReceived = (cookie) => {
-  cookieFromLogin.value = cookie
-  closeWeiboLoginModal()
-  // 可以在这里添加其他处理逻辑，比如刷新配置
-}
 
 // 计算当前显示的组件
 const currentComponent = computed(() => {
@@ -169,43 +149,28 @@ const closeImageViewer = () => {
   showImageViewer.value = false
   currentUser.value = null
 }
-
-// 显示微博登录弹窗
-const showWeiboLoginModal = () => {
-  showWeiboLogin.value = true
-}
-
-// 关闭微博登录弹窗
-const closeWeiboLoginModal = () => {
-  showWeiboLogin.value = false
-}
-
-// 处理获取到的cookie
-const handleCookieReceived = (cookie) => {
-  cookieFromLogin.value = cookie
-  closeWeiboLoginModal()
-  // 可以在这里添加其他处理逻辑，比如刷新配置
-}
 </script>
 
 <template>
-  <div class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-all duration-300">
+  <div class="bg-blue-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-all duration-300">
     <!-- 顶部导航栏 -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300">
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-md transition-all duration-300 backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95 border-b border-blue-200 dark:border-blue-900/50">
       <div class="container mx-auto px-4 flex items-center justify-between h-16">
-        <div class="flex items-center space-x-2">
-          <img src="/static/icons/logo.svg" alt="Logo" class="h-8 w-8">
-          <h1 class="text-xl font-bold text-primary dark:text-secondary">我推 - My Favorite</h1>
+        <div class="flex items-center space-x-3 group">
+          <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg transition-all duration-300 transform hover:scale-110 hover:bg-blue-200 dark:hover:bg-blue-900/50">
+            <img src="/icons/logo.svg" alt="Logo" class="h-8 w-8 text-blue-600 dark:text-blue-400">
+          </div>
+          <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 transition-all duration-300 group-hover:scale-105">我推 - My Favorite</h1>
         </div>
         <div class="flex items-center space-x-4">
-          <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" @click="toggleTheme">
-            <i class="fa fa-moon-o dark:hidden"></i>
-            <i class="fa fa-sun-o hidden dark:block"></i>
-          </button>
-          <div class="relative">
-            <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full"></span>
-            <span id="status-text" class="ml-2 text-sm">未运行</span>
+          <div class="relative flex items-center space-x-2 group">
+            <span id="status-indicator" class="inline-block w-3 h-3 bg-blue-400 dark:bg-blue-500 rounded-full transition-all duration-500 animate-pulse group-hover:scale-125"></span>
+            <span id="status-text" class="text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">未运行</span>
           </div>
+          <button id="theme-toggle" class="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-all duration-300 shadow-sm hover:shadow-md transform hover:scale-110 active:scale-95">
+            <i class="fa fa-moon-o text-blue-600 dark:text-yellow-400 dark:hidden transition-all duration-300 hover:rotate-180"></i>
+            <i class="fa fa-sun-o text-yellow-500 dark:text-blue-300 hidden dark:block transition-all duration-300 hover:rotate-180"></i>
+          </button>
         </div>
       </div>
     </header>
@@ -220,7 +185,8 @@ const handleCookieReceived = (cookie) => {
             <li>
               <a 
                 href="#photo-wall" 
-                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                :class="activeNav === 'photo-wall' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : ''"
                 @click.prevent="switchNav('photo-wall')"
               >
                 <i class="fa fa-th-large text-lg"></i>
@@ -231,7 +197,8 @@ const handleCookieReceived = (cookie) => {
             <li>
               <a 
                 href="#dashboard" 
-                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                :class="activeNav === 'dashboard' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : ''"
                 @click.prevent="switchNav('dashboard')"
               >
                 <i class="fa fa-dashboard text-lg"></i>
@@ -242,18 +209,32 @@ const handleCookieReceived = (cookie) => {
             <li>
               <a 
                 href="#config" 
-                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                :class="activeNav === 'config' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : ''"
                 @click.prevent="switchNav('config')"
               >
                 <i class="fa fa-cog text-lg"></i>
                 <span>配置管理</span>
               </a>
             </li>
+            <!-- 任务执行导航项 -->
+            <li>
+              <a 
+                href="#tasks" 
+                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                :class="activeNav === 'tasks' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : ''"
+                @click.prevent="switchNav('tasks')"
+              >
+                <i class="fa fa-tasks text-lg"></i>
+                <span>任务执行</span>
+              </a>
+            </li>
             <!-- 结果管理导航项 -->
             <li>
               <a 
                 href="#results" 
-                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                :class="activeNav === 'results' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : ''"
                 @click.prevent="switchNav('results')"
               >
                 <i class="fa fa-folder-open text-lg"></i>
@@ -264,7 +245,8 @@ const handleCookieReceived = (cookie) => {
             <li>
               <a 
                 href="#about" 
-                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
+                :class="activeNav === 'about' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : ''"
                 @click.prevent="switchNav('about')"
               >
                 <i class="fa fa-info-circle text-lg"></i>
@@ -277,7 +259,20 @@ const handleCookieReceived = (cookie) => {
 
       <!-- 右侧内容区 -->
       <main class="flex-1 ml-64 transition-all duration-300 p-6">
-        <component :is="currentComponent" @show-file-modal="showFileModal" @view-images="showImageViewerModal" @get-cookie="showWeiboLoginModal" />
+        <!-- 照片墙组件 -->
+        <PhotoWall v-if="activeNav === 'photo-wall'" @show-file-modal="showFileModal" @view-images="showImageViewerModal" />
+        <!-- 仪表盘组件 -->
+        <Dashboard v-else-if="activeNav === 'dashboard'" @show-file-modal="showFileModal" @view-images="showImageViewerModal" />
+        <!-- 配置管理组件 -->
+        <Config v-else-if="activeNav === 'config'" @show-file-modal="showFileModal" @view-images="showImageViewerModal" />
+        <!-- 任务执行组件 -->
+        <Tasks v-else-if="activeNav === 'tasks'" @show-file-modal="showFileModal" @view-images="showImageViewerModal" />
+        <!-- 结果管理组件 -->
+        <Results v-else-if="activeNav === 'results'" @show-file-modal="showFileModal" @view-images="showImageViewerModal" />
+        <!-- 关于组件 -->
+        <About v-else-if="activeNav === 'about'" @show-file-modal="showFileModal" @view-images="showImageViewerModal" />
+        <!-- 默认显示仪表盘 -->
+        <Dashboard v-else @show-file-modal="showFileModal" @view-images="showImageViewerModal" />
       </main>
     </div>
 
@@ -300,23 +295,34 @@ const handleCookieReceived = (cookie) => {
       :user="currentUser" 
       @close="closeImageViewer" 
     />
-
-    <!-- 微博登录模态框 -->
-    <div id="weibo-login-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" v-if="showWeiboLogin">
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <h3 class="text-lg font-semibold">微博Cookie获取</h3>
-          <button id="close-weibo-login" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" @click="closeWeiboLoginModal">
-            <i class="fa fa-times"></i>
-          </button>
-        </div>
-        <div class="p-4 overflow-y-auto max-h-[calc(90vh-100px)]">
-          <weibo-login @cookie-received="handleCookieReceived" @close="closeWeiboLoginModal" />
-        </div>
-      </div>
-    </div>
   </div>
 </template>
+
+<style>
+/* 自定义工具类 */
+.content-auto {
+  content-visibility: auto;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.sidebar-shadow {
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.07);
+}
+.transition-all-300 {
+  transition: all 0.3s ease;
+}
+.hover-scale {
+  transition: transform 0.2s ease;
+}
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+</style>
 
 <style scoped>
 /* 简单的图标替代样式 */
@@ -351,31 +357,5 @@ const handleCookieReceived = (cookie) => {
   transform: translate(-50%, -50%);
   color: #3B82F6;
   font-weight: bold;
-}
-
-/* Tailwind 工具类 */
-@layer utilities {
-  .content-auto {
-    content-visibility: auto;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .sidebar-shadow {
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.07);
-  }
-  .transition-all-300 {
-    transition: all 0.3s ease;
-  }
-  .hover-scale {
-    transition: transform 0.2s ease;
-  }
-  .hover-scale:hover {
-    transform: scale(1.02);
-  }
 }
 </style>

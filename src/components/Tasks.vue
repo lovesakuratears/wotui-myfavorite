@@ -7,41 +7,103 @@ const progress = ref(0)
 const progressText = ref('0%')
 const progressStatus = ref('准备就绪')
 const taskLog = ref('')
+const processedUsers = ref(0)
+const processedWeibo = ref(0)
 let progressInterval = null
+
+// 获取当前时间戳
+function getCurrentTime() {
+  const now = new Date()
+  return now.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
+// 添加日志条目
+function addLog(message, level = 'info') {
+  const timestamp = getCurrentTime()
+  const logEntry = `<div class="log-entry log-${level}">[${timestamp}] ${message}</div>`
+  taskLog.value += logEntry
+  
+  // 自动滚动到底部
+  setTimeout(() => {
+    const logContainer = document.getElementById('task-log')
+    if (logContainer) {
+      logContainer.scrollTop = logContainer.scrollHeight
+    }
+  }, 100)
+}
 
 // 开始爬取任务
 function startTask() {
   isRunning.value = true
   progress.value = 0
+  processedUsers.value = 0
+  processedWeibo.value = 0
   progressText.value = '0%'
   progressStatus.value = '正在爬取...'
-  taskLog.value += '开始爬取任务...\n'
+  taskLog.value = '' // 清空之前的日志
+  
+  addLog('开始爬取任务...', 'info')
+  addLog('初始化爬虫配置...', 'info')
+  addLog('连接到微博服务器...', 'info')
+  addLog('开始处理用户列表...', 'info')
   
   // 模拟进度更新
   progressInterval = setInterval(() => {
-    progress.value += Math.floor(Math.random() * 10) + 1
+    progress.value += Math.floor(Math.random() * 5) + 1
+    
+    // 随机增加处理的用户和微博数
+    if (Math.random() > 0.7) {
+      processedUsers.value++
+      addLog(`处理用户 #${processedUsers.value} 完成`, 'success')
+    }
+    
+    if (Math.random() > 0.5) {
+      const weiboCount = Math.floor(Math.random() * 20) + 1
+      processedWeibo.value += weiboCount
+      addLog(`爬取到 ${weiboCount} 条微博，累计 ${processedWeibo.value} 条`, 'info')
+    }
+    
     if (progress.value >= 100) {
       progress.value = 100
       progressText.value = '100%'
       progressStatus.value = '爬取完成'
-      taskLog.value += '爬取任务完成！\n'
+      addLog('爬取任务完成！', 'success')
+      addLog(`总计处理用户数：${processedUsers.value}`, 'info')
+      addLog(`总计爬取微博数：${processedWeibo.value}`, 'info')
+      addLog('任务执行时间：约 25 秒', 'info')
       clearInterval(progressInterval)
       isRunning.value = false
     } else {
       progressText.value = `${progress.value}%`
-      taskLog.value += `进度更新：${progress.value}%\n`
+      addLog(`进度更新：${progress.value}%`, 'info')
     }
-  }, 500)
+  }, 1000)
 }
 
 // 停止爬取任务
 function stopTask() {
   isRunning.value = false
   progressStatus.value = '已停止'
-  taskLog.value += '爬取任务已停止\n'
+  addLog('爬取任务已停止', 'warning')
+  addLog(`当前进度：${progress.value}%`, 'info')
+  addLog(`已处理用户数：${processedUsers.value}`, 'info')
+  addLog(`已爬取微博数：${processedWeibo.value}`, 'info')
   if (progressInterval) {
     clearInterval(progressInterval)
   }
+}
+
+// 清空日志
+function clearLog() {
+  taskLog.value = ''
+  addLog('日志已清空', 'info')
 }
 </script>
 
@@ -87,10 +149,19 @@ function stopTask() {
       </div>
 
       <div>
-        <h3 class="text-lg font-semibold mb-4">任务日志</h3>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold">任务日志</h3>
+          <button 
+            id="clear-log" 
+            class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium rounded shadow-sm hover:shadow-md"
+            @click="clearLog"
+          >
+            <i class="fa fa-trash mr-1"></i>清空日志
+          </button>
+        </div>
         <div 
           id="task-log" 
-          class="w-full h-64 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 overflow-y-auto text-sm font-mono"
+          class="w-full h-80 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 p-4 overflow-y-auto text-sm font-mono shadow-inner"
           v-html="taskLog"
         ></div>
       </div>
@@ -99,5 +170,56 @@ function stopTask() {
 </template>
 
 <style scoped>
-/* 组件特定样式 */
+/* 任务日志样式 */
+#task-log {
+  line-height: 1.6;
+}
+
+.log-entry {
+  margin-bottom: 4px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* 不同级别的日志样式 */
+.log-info {
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+.log-success {
+  color: #15803d;
+  background-color: #dcfce7;
+}
+
+.log-warning {
+  color: #92400e;
+  background-color: #fef3c7;
+}
+
+.log-error {
+  color: #991b1b;
+  background-color: #fee2e2;
+}
+
+/* 深色模式下的日志样式 */
+.dark .log-info {
+  color: #d1d5db;
+  background-color: #1f2937;
+}
+
+.dark .log-success {
+  color: #86efac;
+  background-color: #166534;
+}
+
+.dark .log-warning {
+  color: #fbbf24;
+  background-color: #92400e;
+}
+
+.dark .log-error {
+  color: #fca5a5;
+  background-color: #7f1d1d;
+}
 </style>
