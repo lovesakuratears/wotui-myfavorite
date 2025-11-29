@@ -47,7 +47,10 @@ DTFORMAT = "%Y-%m-%dT%H:%M:%S"
 class Weibo(object):
     def __init__(self, config):
         """Weibo类初始化"""
+        # 首先验证并处理配置
         self.validate_config(config)
+        
+        # 然后将处理后的配置值赋值给实例变量
         self.only_crawl_original = config["only_crawl_original"]  # 取值范围为0、1,程序默认值为0,代表要爬取用户的全部微博,1代表只爬取用户的原创微博
         self.remove_html_tag = config[
             "remove_html_tag"
@@ -83,8 +86,8 @@ class Weibo(object):
         ]  # 取值范围为0、1, 0代表不下载转发微博视频,1代表下载
         
         # 新增Live Photo视频下载配置
-        self.original_live_photo_download = config.get("original_live_photo_download", 0)
-        self.retweet_live_photo_download = config.get("retweet_live_photo_download", 0)
+        self.original_live_photo_download = config["original_live_photo_download"]
+        self.retweet_live_photo_download = config["retweet_live_photo_download"]
         
         self.download_comment = config["download_comment"]  # 1代表下载评论,0代表不下载
         self.comment_max_download_count = config[
@@ -254,6 +257,8 @@ class Weibo(object):
             if str(value) not in ['0', '1']:
                 logger.warning("%s值应为0或1,请重新输入", value)
                 sys.exit()
+            # 将字符串转换为整数
+            config[argument] = int(value)
 
         # 验证query_list
         query_list = config.get("query_list") or []
@@ -1030,117 +1035,6 @@ class Weibo(object):
                 pass
         
         return success
-        """下载单个文件(图片/视频)"""
-        try:
-
-            file_exist = os.path.isfile(file_path)
-            need_download = (not file_exist)
-            sqlite_exist = False
-            if "sqlite" in self.write_mode:
-                sqlite_exist = self.sqlite_exist_file(file_path)
-
-            if not need_download:
-                return 
-
-            s = requests.Session()
-            s.mount('http://', HTTPAdapter(max_retries=5))
-            s.mount('https://', HTTPAdapter(max_retries=5))
-            try_count = 0
-            success = False
-            MAX_TRY_COUNT = 3
-            detected_extension = None
-            while try_count < MAX_TRY_COUNT:
-                try:
-                    response = s.get(
-                        url, headers=self.headers, timeout=(5, 10), verify=False
-                    )
-                    response.raise_for_status()
-                    downloaded = response.content
-                    try_count += 1
-
-                    # 获取文件后缀
-                    url_path = url.split('?')[0]  # 去除URL中的参数
-                    inferred_extension = os.path.splitext(url_path)[1].lower().strip('.')
-
-                    # 通过 Magic Number 检测文件类型
-                    if downloaded.startswith(b'\xFF\xD8\xFF'):
-                        # JPEG 文件
-                        if not downloaded.endswith(b'\xff\xd9'):
-                            logger.debug(f"[DEBUG] JPEG 文件不完整: {url} ({try_count}/{MAX_TRY_COUNT})")
-                            continue  # 文件不完整，继续重试
-                        detected_extension = '.jpg'
-                    elif downloaded.startswith(b'\x89PNG\r\n\x1A\n'):
-                        # PNG 文件
-                        if not downloaded.endswith(b'IEND\xaeB`\x82'):
-                            logger.debug(f"[DEBUG] PNG 文件不完整: {url} ({try_count}/{MAX_TRY_COUNT})")
-                            continue  # 文件不完整，继续重试
-                        detected_extension = '.png'
-                    else:
-                        # 其他类型，使用原有逻辑处理
-                        if inferred_extension in ['mp4', 'mov', 'webm', 'gif', 'bmp', 'tiff']:
-                            detected_extension = '.' + inferred_extension
-                        else:
-                            # 尝试从 Content-Type 获取扩展名
-                            content_type = response.headers.get('Content-Type', '').lower()
-                            if 'image/jpeg' in content_type:
-                                detected_extension = '.jpg'
-                            elif 'image/png' in content_type:
-                                detected_extension = '.png'
-                            elif 'video/mp4' in content_type:
-                                detected_extension = '.mp4'
-                            elif 'video/quicktime' in content_type:
-                                detected_extension = '.mov'
-                            elif 'video/webm' in content_type:
-                                detected_extension = '.webm'
-                            elif 'image/gif' in content_type:
-                                detected_extension = '.gif'
-                            else:
-                                # 使用原有的扩展名，如果无法确定
-                                detected_extension = '.' + inferred_extension if inferred_extension else ''
-
-                    # 动态调整文件路径的扩展名
-                    if detected_extension:
-                        file_path = re.sub(r'\.\w+$', detected_extension, file_path)
-
-                    # 保存文件
-                    if not os.path.isfile(file_path):
-                        with open(file_path, "wb") as f:
-                            f.write(downloaded)
-                            logger.debug("[DEBUG] save " + file_path)
-
-                    success = True
-                    logger.debug("[DEBUG] success " + url + "  " + str(try_count))
-                    break  # 下载成功，退出重试循环
-
-                except RequestException as e:
-                    try_count += 1
-                    logger.error(f"[ERROR] 请求失败，错误信息：{e}。尝试次数：{try_count}/{MAX_TRY_COUNT}")
-                    sleep_time = 2 ** try_count  # 指数退避
-                    sleep(sleep_time)
-                except Exception as e:
-                    logger.exception(f"[ERROR] 下载过程中发生错误: {e}")
-                    break  # 对于其他异常，退出重试
-
-            if success:
-                if "sqlite" in self.write_mode and not sqlite_exist:
-                    self.insert_file_sqlite(
-                        file_path, weibo_id, url, downloaded
-                    )
-            else:
-                logger.debug("[DEBUG] failed " + url + " TOTALLY")
-                error_file = self.get_filepath(type) + os.sep + "not_downloaded.txt"
-                with open(error_file, "ab") as f:
-                    error_entry = f"{weibo_id}:{file_path}:{url}\n"
-                    f.write(error_entry.encode(sys.stdout.encoding))
-        except Exception as e:
-            # 生成原始微博URL
-            original_url = f"https://m.weibo.cn/detail/{weibo_id}"  # 新增
-            error_file = self.get_filepath(type) + os.sep + "not_downloaded.txt"
-            with open(error_file, "ab") as f:
-                # 修改错误条目格式，添加原始URL
-                error_entry = f"{weibo_id}:{file_path}:{url}:{original_url}\n"  # 修改
-                f.write(error_entry.encode(sys.stdout.encoding))
-            logger.exception(e)
 
     def sqlite_exist_file(self, url):
         if not os.path.exists(self.get_sqlte_path()):
@@ -2725,9 +2619,17 @@ class Weibo(object):
 
     def write_data(self, wrote_count):
         """将爬到的信息写入文件或数据库"""
+        # 使用print语句确保日志能显示在控制台
+        print(f"=== 进入write_data函数: got_count={self.got_count}, wrote_count={wrote_count} ===")
+        print(f"=== original_pic_download标志: {self.original_pic_download} (类型: {type(self.original_pic_download)}) ===")
+        print(f"=== only_crawl_original标志: {self.only_crawl_original} (类型: {type(self.only_crawl_original)}) ===")
+        print(f"=== 当前微博数据数量: {len(self.weibo)} ===")
+        print(f"=== 需要处理的微博范围: {wrote_count} 到 {self.got_count} ===")
         logger.info(f"进入write_data函数: got_count={self.got_count}, wrote_count={wrote_count}")
-        logger.info(f"original_pic_download标志: {self.original_pic_download}")
+        logger.info(f"original_pic_download标志: {self.original_pic_download} (类型: {type(self.original_pic_download)})")
+        logger.info(f"only_crawl_original标志: {self.only_crawl_original} (类型: {type(self.only_crawl_original)})")
         logger.info(f"当前微博数据数量: {len(self.weibo)}")
+        logger.info(f"需要处理的微博范围: {wrote_count} 到 {self.got_count}")
         
         # 即使没有新数据，也尝试下载文件，确保所有配置的下载操作都能执行
         try:
@@ -2735,10 +2637,12 @@ class Weibo(object):
             if self.got_count > wrote_count:
                 # 在写入数据前添加随机延迟，避免请求过于规律
                 delay = random.uniform(2, 5)
+                print(f"=== 写入数据前随机延迟 {delay:.2f} 秒 ===")
                 logger.info(f"写入数据前随机延迟 {delay:.2f} 秒")
                 sleep(delay)
                 
                 if "csv" in self.write_mode:
+                    print(f"=== 写入CSV文件 ===")
                     self.write_csv(wrote_count)
                 if "json" in self.write_mode:
                     self.write_json(wrote_count)
@@ -2751,37 +2655,51 @@ class Weibo(object):
                 if "sqlite" in self.write_mode:
                     self.weibo_to_sqlite(wrote_count)
             else:
+                print(f"=== 没有新数据需要写入: got_count <= wrote_count ===")
                 logger.info("没有新数据需要写入: got_count <= wrote_count")
             
             # 下载原创微博文件
+            print(f"=== 开始处理文件下载操作 ===")
             logger.info("开始处理文件下载操作")
             
             # 下载任务列表
             download_tasks = []
             if self.original_pic_download:
                 download_tasks.append(("img", "original"))
+                print(f"=== 添加原创微博图片下载任务 ===")
                 logger.info("添加原创微博图片下载任务")
+            else:
+                print(f"=== 跳过原创微博图片下载任务，因为original_pic_download={self.original_pic_download} ===")
+                logger.info(f"跳过原创微博图片下载任务，因为original_pic_download={self.original_pic_download}")
+            
             if self.original_video_download:
                 download_tasks.append(("video", "original"))
+                print(f"=== 添加原创微博视频下载任务 ===")
                 logger.info("添加原创微博视频下载任务")
             if self.original_live_photo_download:
                 download_tasks.append(("live_photo", "original"))
+                print(f"=== 添加原创微博Live Photo下载任务 ===")
                 logger.info("添加原创微博Live Photo下载任务")
             
             # 如果不禁爬转发，添加转发微博下载任务
             if not self.only_crawl_original:
+                print(f"=== 开始处理转发微博文件下载 ===")
                 logger.info("开始处理转发微博文件下载")
                 if self.retweet_pic_download:
                     download_tasks.append(("img", "retweet"))
+                    print(f"=== 添加转发微博图片下载任务 ===")
                     logger.info("添加转发微博图片下载任务")
                 if self.retweet_video_download:
                     download_tasks.append(("video", "retweet"))
+                    print(f"=== 添加转发微博视频下载任务 ===")
                     logger.info("添加转发微博视频下载任务")
                 if self.retweet_live_photo_download:
                     download_tasks.append(("live_photo", "retweet"))
+                    print(f"=== 添加转发微博Live Photo下载任务 ===")
                     logger.info("添加转发微博Live Photo下载任务")
             
             # 打印最终下载任务列表
+            print(f"=== 最终下载任务列表: {download_tasks} ===")
             logger.info(f"最终下载任务列表: {download_tasks}")
             
             # 智能处理下载任务，实现重试和代理切换
@@ -2795,46 +2713,56 @@ class Weibo(object):
                     try:
                         # 在每个下载任务前添加随机延迟
                         delay = random.uniform(3, 8)
+                        print(f"=== 准备下载 {file_type} {weibo_type} 文件，随机延迟 {delay:.2f} 秒 ===")
                         logger.info(f"准备下载 {file_type} {weibo_type} 文件，随机延迟 {delay:.2f} 秒")
                         sleep(delay)
                         
                         # 如果之前遇到432错误，考虑切换代理
                         if hasattr(self, 'last_432_error') and self.last_432_error and retry_count > 0:
+                            print(f"=== 检测到之前有432错误，尝试切换代理进行第 {retry_count+1} 次重试 ===")
                             logger.info(f"检测到之前有432错误，尝试切换代理进行第 {retry_count+1} 次重试")
                             if hasattr(self, 'get_next_proxy'):
                                 self.get_next_proxy()
                         
                         # 执行下载
+                        print(f"=== 执行下载 {file_type} {weibo_type} 文件 ===")
                         self.download_files(file_type, weibo_type, wrote_count)
                         success = True
+                        print(f"=== 成功下载 {file_type} {weibo_type} 文件 ===")
                         logger.info(f"成功下载 {file_type} {weibo_type} 文件")
                         
                     except Exception as e:
                         retry_count += 1
                         error_msg = str(e)
+                        print(f"=== 下载 {file_type} {weibo_type} 文件时出错: {error_msg}，第 {retry_count} 次重试 ===")
                         logger.error(f"下载 {file_type} {weibo_type} 文件时出错: {error_msg}，第 {retry_count} 次重试")
                         logger.exception(e)
                         
                         # 检查是否为432错误
                         if "432" in error_msg:
+                            print(f"=== 检测到432错误，这可能是反爬机制导致的 ===")
                             logger.warning("检测到432错误，这可能是反爬机制导致的")
                             setattr(self, 'last_432_error', True)
                             # 432错误使用指数退避策略
                             backoff_time = min(30, 2 ** retry_count * 2)
+                            print(f"=== 针对432错误，使用指数退避策略，等待 {backoff_time} 秒后重试 ===")
                             logger.info(f"针对432错误，使用指数退避策略，等待 {backoff_time} 秒后重试")
                             sleep(backoff_time)
                             # 切换User-Agent
                             if hasattr(self, 'user_agents') and self.user_agents:
                                 new_agent = random.choice(self.user_agents)
                                 self.headers['User-Agent'] = new_agent
+                                print(f"=== 已切换User-Agent为: {new_agent} ===")
                                 logger.info(f"已切换User-Agent为: {new_agent}")
                         else:
                             # 其他错误使用线性退避
                             sleep_time = random.uniform(2, 5)
+                            print(f"=== 非432错误，等待 {sleep_time:.2f} 秒后重试 ===")
                             logger.info(f"非432错误，等待 {sleep_time:.2f} 秒后重试")
                             sleep(sleep_time)
                 
                 if not success:
+                    print(f"=== 下载 {file_type} {weibo_type} 文件在 {max_retries} 次尝试后失败 ===")
                     logger.error(f"下载 {file_type} {weibo_type} 文件在 {max_retries} 次尝试后失败")
                     # 记录失败但继续处理其他任务
                     
@@ -2843,11 +2771,13 @@ class Weibo(object):
                 self.last_432_error = False
                 
         except Exception as e:
+            print(f"=== write_data函数执行出错: {str(e)} ===")
             logger.error(f"write_data函数执行出错: {str(e)}")
             logger.exception(e)
             # 在异常发生后也添加随机延迟，避免立即重试导致的反爬
             sleep(random.uniform(5, 10))
         
+        print(f"=== write_data函数执行完毕 ===")
         logger.info("write_data函数执行完毕")
 
     def get_pages(self):
@@ -2919,16 +2849,18 @@ class Weibo(object):
                             page_success = True
                             consecutive_432_errors = 0  # 重置连续错误计数
                             
-                            if is_end:
-                                break
-
-                            if page % 20 == 0:  # 每爬20页写入一次文件
+                            # 确保每爬1页就调用write_data函数，不管is_end的值是什么
+                            if page % 1 == 0:  # 每爬1页写入一次文件，方便测试
+                                print(f"=== 调用write_data函数，page={page}，got_count={self.got_count}，wrote_count={wrote_count} ===")
                                 self.write_data(wrote_count)
                                 wrote_count = self.got_count
                                 # 写入数据后也添加随机延迟
                                 data_delay = random.uniform(2, 5)
                                 logger.info(f"数据写入完成，随机延迟 {data_delay:.2f} 秒")
                                 sleep(data_delay)
+                            
+                            if is_end:
+                                break
 
                         except Exception as e:
                             page_retry += 1

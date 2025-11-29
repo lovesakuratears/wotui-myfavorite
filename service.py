@@ -182,7 +182,8 @@ def run_refresh_task(task_id, user_id_list=None):
         
         log_message("处理配置重命名")
         # 处理配置重命名
-        task_config = handle_config_renaming(task_config)
+        handle_config_renaming(task_config, oldName="filter", newName="only_crawl_original")
+        handle_config_renaming(task_config, oldName="result_dir_name", newName="user_id_as_folder_name")
         
         log_message("配置处理完成，准备创建微博爬取对象")
         
@@ -199,7 +200,7 @@ def run_refresh_task(task_id, user_id_list=None):
         
         # 执行爬取任务
         log_message("正在执行爬取操作...")
-        wb.run()
+        wb.start()
         
         log_message("爬取任务执行完成")
         
@@ -304,12 +305,13 @@ def load_config_file():
         if os.path.exists(CONFIG_FILE_PATH):
             with open(CONFIG_FILE_PATH, 'r', encoding='utf-8') as f:
                 loaded_config = json.load(f)
-                # 合并默认配置和加载的配置
+                # 合并默认配置和加载的配置，确保加载的配置优先
                 config = {**DEFAULT_CONFIG, **loaded_config}
                 # 确保user_id_list是列表
                 if 'user_id_list' in config and isinstance(config['user_id_list'], str):
                     config['user_id_list'] = [uid.strip() for uid in config['user_id_list'].split(',') if uid.strip()]
                 print(f"配置已从文件加载: {CONFIG_FILE_PATH}")
+                print(f"加载的配置: {json.dumps(config, ensure_ascii=False, indent=2)}")
         else:
             # 使用默认配置
             config = DEFAULT_CONFIG.copy()
