@@ -4,204 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我推 - My Favorite</title>
-    <!-- 网站图标 - 使用ICO文件 -->
-    <link rel="icon" type="image/x-icon" href="/static/icons/logo.ico">
-    <link rel="icon" type="image/svg+xml" href="/static/icons/logo.svg">
+    <!-- 引入Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- 引入Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#3B82F6',
-                        secondary: '#8B5CF6'
-                    }
-                }
-            }
+
+    <!-- 自定义样式 -->
+    <style>
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
         }
-    </script>
-    <!-- 内联任务停止功能代码 -->
-    <script>
-        function addStopTaskButton() {
-            const taskProgressDiv = document.getElementById('taskProgress');
-            if (taskProgressDiv) {
-                if (!document.getElementById('stopTaskBtn')) {
-                    const stopBtn = document.createElement('button');
-                    stopBtn.id = 'stopTaskBtn';
-                    stopBtn.className = 'btn btn-danger';
-                    stopBtn.textContent = '停止爬取';
-                    stopBtn.onclick = stopCrawlingTask;
-                    stopBtn.style.marginLeft = '10px';
-                    const progressBar = taskProgressDiv.querySelector('.progress');
-                    if (progressBar) {
-                        taskProgressDiv.insertBefore(stopBtn, progressBar.nextSibling);
-                    }
-                }
+        
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* 卡片悬停效果 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* 按钮动画 */
+        .btn-hover {
+            transition: all 0.2s ease;
+        }
+        
+        .btn-hover:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* 统计卡片动画 */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* 导航链接动画 */
+        .nav-link {
+            transition: all 0.2s ease;
+        }
+        
+        /* 进度条动画 */
+        #progress-bar {
+            transition: width 0.5s ease;
+        }
+        
+        /* 加载动画 */
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
             }
         }
         
-        function stopCrawlingTask() {
-            if (!window.currentTaskId) {
-                alert('没有正在运行的任务');
-                return;
-            }
-            document.getElementById('stopTaskBtn').disabled = true;
-            alert('正在停止任务...');
-            fetch('/task/cancel', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('任务已停止');
-                        window.currentTaskId = null;
-                    }
-                });
-        }
-    </script>
-    <!-- 添加Font Awesome图标库 -->
-    <!-- 移除外部CDN依赖，使用内联图标 -->
-    <style>
-        /* 简单的图标替代方案 */
-        .icon { display: inline-block; width: 16px; height: 16px; text-align: center; line-height: 16px; }
-    </style>
-    <!-- 简单的额外样式 -->
-    <style>
-        /* 简单的图标替代样式 */
-        .icon {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            background-color: #3B82F6;
-            border-radius: 4px;
-            position: relative;
-        }
-        .icon:before, .icon:after {
-            content: '';
-            position: absolute;
-            background-color: white;
-        }
-        /* 简单的复选框替代 */
-        .checkbox {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #3B82F6;
-            border-radius: 4px;
-            display: inline-block;
-            position: relative;
-            cursor: pointer;
-        }
-        .checkbox.checked:after {
-            content: '✓';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #3B82F6;
-            font-weight: bold;
+        .animate-spin {
+            animation: spin 1s linear infinite;
         }
     </style>
-    <!-- 简单的Chart.js替代实现 -->
-    <script>
-        // 简单的图表替代类，模拟Chart.js的基本功能
-        class SimpleChart {
-            constructor(ctx, config) {
-                this.ctx = ctx;
-                this.config = config;
-                this.canvas = ctx.canvas;
-                this.render();
-            }
-            
-            render() {
-                const { width, height } = this.canvas;
-                const data = this.config.data;
-                
-                // 清空画布
-                this.ctx.clearRect(0, 0, width, height);
-                
-                // 绘制简单的条形图或折线图
-                if (this.config.type === 'bar') {
-                    this.renderBarChart();
-                } else if (this.config.type === 'line') {
-                    this.renderLineChart();
-                } else {
-                    // 默认绘制简单文本
-                    this.ctx.fillStyle = '#333';
-                    this.ctx.font = '16px Arial';
-                    this.ctx.textAlign = 'center';
-                    this.ctx.fillText('图表数据可用', width/2, height/2);
-                }
-            }
-            
-            renderBarChart() {
-                const { width, height } = this.canvas;
-                const data = this.config.data;
-                const barWidth = width / data.labels.length * 0.7;
-                const maxValue = Math.max(...data.datasets[0].data);
-                
-                data.labels.forEach((label, index) => {
-                    const value = data.datasets[0].data[index];
-                    const barHeight = (value / maxValue) * (height - 40);
-                    const x = index * (width / data.labels.length) + (width / data.labels.length - barWidth) / 2;
-                    const y = height - 30 - barHeight;
-                    
-                    // 绘制柱状图
-                    this.ctx.fillStyle = data.datasets[0].backgroundColor || '#3B82F6';
-                    this.ctx.fillRect(x, y, barWidth, barHeight);
-                    
-                    // 绘制标签
-                    this.ctx.fillStyle = '#333';
-                    this.ctx.font = '12px Arial';
-                    this.ctx.textAlign = 'center';
-                    this.ctx.fillText(label, x + barWidth/2, height - 10);
-                });
-            }
-            
-            renderLineChart() {
-                const { width, height } = this.canvas;
-                const data = this.config.data;
-                const maxValue = Math.max(...data.datasets[0].data);
-                
-                // 绘制折线
-                this.ctx.beginPath();
-                data.datasets[0].data.forEach((value, index) => {
-                    const x = (index / (data.datasets[0].data.length - 1)) * (width - 40) + 20;
-                    const y = height - 30 - (value / maxValue) * (height - 40);
-                    
-                    if (index === 0) {
-                        this.ctx.moveTo(x, y);
-                    } else {
-                        this.ctx.lineTo(x, y);
-                    }
-                });
-                this.ctx.strokeStyle = data.datasets[0].borderColor || '#3B82F6';
-                this.ctx.lineWidth = 2;
-                this.ctx.stroke();
-                
-                // 绘制点
-                data.datasets[0].data.forEach((value, index) => {
-                    const x = (index / (data.datasets[0].data.length - 1)) * (width - 40) + 20;
-                    const y = height - 30 - (value / maxValue) * (height - 40);
-                    
-                    this.ctx.beginPath();
-                    this.ctx.arc(x, y, 4, 0, 2 * Math.PI);
-                    this.ctx.fillStyle = data.datasets[0].backgroundColor || '#3B82F6';
-                    this.ctx.fill();
-                    
-                    // 绘制标签
-                    if (data.labels && data.labels[index]) {
-                        this.ctx.fillStyle = '#333';
-                        this.ctx.font = '12px Arial';
-                        this.ctx.textAlign = 'center';
-                        this.ctx.fillText(data.labels[index], x, height - 10);
-                    }
-                });
-            }
-        }
-        
-        // 确保Chart全局变量可用
-        window.Chart = function(ctx, config) {
-            return new SimpleChart(ctx, config);
-        };
-    </script>
+    <!-- Tailwind 配置 -->
     <script>
         // Tailwind 配置
         tailwind.config = {
@@ -209,17 +96,33 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1E40AF',
-                        secondary: '#3B82F6',
-                        accent: '#60A5FA',
+                        primary: '#3B82F6',
+                        secondary: '#60A5FA',
+                        accent: '#818CF8',
                         success: '#10B981',
                         warning: '#F59E0B',
                         danger: '#EF4444',
                         info: '#3B82F6',
+                        dark: {
+                            primary: '#60A5FA',
+                            secondary: '#3B82F6',
+                            background: '#1F2937',
+                            card: '#374151',
+                            border: '#4B5563',
+                            text: '#F9FAFB'
+                        }
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
                     },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    },
+                    borderRadius: {
+                        'card': '0.75rem',
+                        'button': '0.5rem',
+                    }
                 },
             }
         }
@@ -251,23 +154,22 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-all duration-300">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-all duration-300">
     <!-- 顶部导航栏 -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 shadow-sm transition-all duration-300">
-        <div class="flex items-center justify-between h-16 pl-4 pr-4">
-            <div class="flex items-center space-x-2">
-                <!-- 使用新的SVG文件作为logo -->
-                <img src="/static/icons/logo.svg" alt="Logo" class="w-8 h-8 rounded-md">
-                <h1 class="text-xl font-bold text-primary dark:text-secondary">我推 - My Favorite</h1>
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-md transition-all duration-300">
+        <div class="container mx-auto px-4 flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <img src="/static/icons/logo.svg" alt="Logo" class="h-9 w-9 rounded-lg shadow-md transition-all duration-300 hover:scale-110">
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent drop-shadow-sm">我推 - My Favorite</h1>
             </div>
-            <div class="flex items-center space-x-4">
-                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                    <span class="dark:hidden">🌙</span>
-                    <span class="hidden dark:block">☀️</span>
+            <div class="flex items-center space-x-5">
+                <button id="theme-toggle" class="p-2.5 rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 transform hover:scale-110 hover:shadow-md">
+                    <i class="fa fa-moon-o dark:hidden text-gray-600 dark:text-gray-300 text-lg"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-400 text-lg"></i>
                 </button>
-                <div class="relative">
-                    <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full"></span>
-                    <span id="status-text" class="ml-2 text-sm">未运行</span>
+                <div class="relative flex items-center space-x-2 bg-gray-100 dark:bg-gray-700/50 px-3 py-1.5 rounded-full shadow-inner">
+                    <span id="status-indicator" class="inline-block w-3.5 h-3.5 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse transition-all duration-500"></span>
+                    <span id="status-text" class="text-sm font-medium text-gray-600 dark:text-gray-300">未运行</span>
                 </div>
             </div>
         </div>
@@ -276,41 +178,47 @@
     <!-- 主要内容 -->
     <div class="flex pt-16 min-h-screen">
         <!-- 左侧导航栏 -->
-        <aside id="sidebar" class="fixed left-0 top-16 bottom-0 w-64 bg-white dark:bg-gray-800 sidebar-shadow overflow-y-auto scrollbar-hide transition-all duration-300 transform z-40">
+        <aside id="sidebar" class="fixed left-0 top-16 bottom-0 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm sidebar-shadow overflow-y-auto scrollbar-hide transition-all duration-300 transform z-40">
             <nav class="py-6 px-4">
                 <ul class="space-y-1">
                     <li>
-                        <a href="#dashboard" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary/10 text-primary dark:bg-primary/20 dark:text-secondary font-medium">
+                        <a href="#photo-wall" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:translate-x-1">
+                            <i class="fa fa-th-large text-lg"></i>
+                            <span>照片墙</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#dashboard" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary font-medium shadow-sm">
                             <i class="fa fa-dashboard text-lg"></i>
                             <span>仪表盘</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#config" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <a href="#config" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:translate-x-1">
                             <i class="fa fa-cog text-lg"></i>
                             <span>配置管理</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#tasks" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <a href="#tasks" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:translate-x-1">
                             <i class="fa fa-tasks text-lg"></i>
                             <span>任务执行</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#results" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <a href="#results" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:translate-x-1">
                             <i class="fa fa-folder-open text-lg"></i>
                             <span>结果管理</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#logs" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <a href="#logs" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:translate-x-1">
                             <i class="fa fa-file-text text-lg"></i>
                             <span>日志查看</span>
                         </a>
                     </li>
                     <li>
-                        <a href="#about" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <a href="#about" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:translate-x-1">
                             <i class="fa fa-info-circle text-lg"></i>
                             <span>关于</span>
                         </a>
@@ -321,49 +229,147 @@
 
         <!-- 右侧内容区 -->
         <main class="flex-1 ml-64 transition-all duration-300 p-6">
+            <!-- 照片墙区域 -->
+            <section id="photo-wall" class="mb-12">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+                        <h2 class="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">照片墙</h2>
+                        <div class="flex items-center space-x-2">
+                            <button id="toggle-photo-controls" class="p-2 rounded-full hover:bg-primary/10 dark:hover:bg-primary/20 transition-all duration-300 transform hover:scale-110 hover:shadow-md">
+                                <i class="fa fa-sliders text-gray-600 dark:text-gray-300"></i>
+                            </button>
+                            <span class="text-sm text-gray-500 dark:text-gray-400" id="photo-count">0 张图片</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 控制栏 -->
+                    <div id="photo-controls" class="mb-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- 显示数量设置 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">每页显示数量</label>
+                                <div class="flex space-x-2">
+                                    <select id="photo-page-size" class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg">
+                                        <option value="12">12</option>
+                                        <option value="24" selected>24</option>
+                                        <option value="36">36</option>
+                                        <option value="48">48</option>
+                                        <option value="60">60</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- 布局模式设置 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">布局模式</label>
+                                <div class="flex space-x-2">
+                                    <button id="layout-grid" class="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:shadow-lg transition-all btn-hover flex items-center justify-center">
+                                        <i class="fa fa-th mr-2"></i>网格
+                                    </button>
+                                    <button id="layout-masonry" class="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:shadow-lg transition-all btn-hover flex items-center justify-center">
+                                        <i class="fa fa-th-large mr-2"></i>瀑布流
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 批量操作 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">批量操作</label>
+                                <div class="flex space-x-2">
+                                    <button id="batch-delete-photos" class="flex-1 px-4 py-3 bg-gradient-to-r from-danger to-red-500 text-white rounded-lg hover:shadow-lg transition-all btn-hover flex items-center justify-center" disabled>
+                                        <i class="fa fa-trash mr-2"></i>删除 (0)
+                                    </button>
+                                    <button id="clear-photo-wall" class="flex-1 px-4 py-3 bg-gradient-to-r from-warning to-yellow-500 text-white rounded-lg hover:shadow-lg transition-all btn-hover flex items-center justify-center" disabled>
+                                        <i class="fa fa-refresh mr-2"></i>清空
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 照片墙内容 -->
+                    <div class="mb-6">
+                        <!-- 全选和分页信息 -->
+                        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" id="select-all-photos" class="rounded text-primary focus:ring-primary/50">
+                                <label for="select-all-photos" class="text-sm text-gray-700 dark:text-gray-300">全选</label>
+                                <span class="text-sm text-gray-500 dark:text-gray-400" id="selected-photo-count">(0 / 0)</span>
+                            </div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                第 <span id="current-photo-page">1</span> / <span id="total-photo-pages">1</span> 页
+                            </div>
+                        </div>
+                        
+                        <!-- 照片墙网格 -->
+                        <div id="photo-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            <!-- 照片将在这里动态生成 -->
+                            <div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+                                <i class="fa fa-picture-o text-4xl mb-3"></i>
+                                <h3 class="text-lg font-semibold mb-2">照片墙为空</h3>
+                                <p>从结果管理页面选择图片添加到照片墙</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 分页控件 -->
+                    <div id="photo-pagination" class="flex justify-center items-center space-x-2" style="display: none;">
+                        <button id="prev-photo-page" class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" disabled>
+                            <i class="fa fa-chevron-left mr-2"></i>上一页
+                        </button>
+                        <span class="text-sm text-gray-700 dark:text-gray-300">
+                            第 <span id="pagination-current">1</span> / <span id="pagination-total">1</span> 页
+                        </span>
+                        <button id="next-photo-page" class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" disabled>
+                            下一页 <i class="fa fa-chevron-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
             <!-- 仪表盘区域 -->
             <section id="dashboard" class="mb-12">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover-scale">
-                    <h2 class="text-2xl font-bold mb-6">仪表盘</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                    <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">仪表盘</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-blue-50 dark:bg-gray-700/50 p-5 rounded-lg">
+                        <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-5 rounded-xl shadow-sm">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-gray-600 dark:text-gray-300 text-sm">已爬取用户</p>
-                                    <h3 class="text-2xl font-bold mt-1" id="user-count">0</h3>
+                                    <h3 class="text-2xl font-bold mt-1 text-blue-600 dark:text-blue-400" id="user-count">0</h3>
                                 </div>
                                 <div class="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full">
                                     <i class="fa fa-users text-blue-500"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-green-50 dark:bg-gray-700/50 p-5 rounded-lg">
+                        <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-5 rounded-xl shadow-sm">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-gray-600 dark:text-gray-300 text-sm">已爬取微博</p>
-                                    <h3 class="text-2xl font-bold mt-1" id="weibo-count">0</h3>
+                                    <h3 class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400" id="weibo-count">0</h3>
                                 </div>
                                 <div class="p-3 bg-green-100 dark:bg-green-900/50 rounded-full">
                                     <i class="fa fa-comment text-green-500"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-purple-50 dark:bg-gray-700/50 p-5 rounded-lg">
+                        <div class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 p-5 rounded-xl shadow-sm">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-gray-600 dark:text-gray-300 text-sm">已下载文件</p>
-                                    <h3 class="text-2xl font-bold mt-1" id="file-count">0</h3>
+                                    <h3 class="text-2xl font-bold mt-1 text-purple-600 dark:text-purple-400" id="file-count">0</h3>
                                 </div>
                                 <div class="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-full">
                                     <i class="fa fa-download text-purple-500"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-orange-50 dark:bg-gray-700/50 p-5 rounded-lg">
+                        <div class="stat-card bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 p-5 rounded-xl shadow-sm">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-gray-600 dark:text-gray-300 text-sm">任务成功率</p>
-                                    <h3 class="text-2xl font-bold mt-1" id="success-rate">0%</h3>
+                                    <h3 class="text-2xl font-bold mt-1 text-orange-600 dark:text-orange-400" id="success-rate">0%</h3>
                                 </div>
                                 <div class="p-3 bg-orange-100 dark:bg-orange-900/50 rounded-full">
                                     <i class="fa fa-line-chart text-orange-500"></i>
@@ -372,21 +378,21 @@
                         </div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg">
-                            <h3 class="text-lg font-semibold mb-4">爬取趋势</h3>
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl shadow-sm">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">爬取趋势</h3>
                             <div class="h-64">
                                 <canvas id="crawl-chart"></canvas>
                             </div>
                         </div>
-                        <div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-lg">
-                            <h3 class="text-lg font-semibold mb-4">最近爬取的用户</h3>
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl shadow-sm">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">最近爬取的用户</h3>
                             <div class="overflow-y-auto h-64 scrollbar-hide">
                                 <table class="w-full">
                                     <thead>
                                         <tr class="border-b border-gray-200 dark:border-gray-700">
-                                            <th class="text-left py-2 text-sm font-medium">用户</th>
-                                            <th class="text-left py-2 text-sm font-medium">微博数</th>
-                                            <th class="text-left py-2 text-sm font-medium">状态</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-600 dark:text-gray-300">用户</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-600 dark:text-gray-300">微博数</th>
+                                            <th class="text-left py-2 text-sm font-medium text-gray-600 dark:text-gray-300">状态</th>
                                         </tr>
                                     </thead>
                                     <tbody id="recent-users">
@@ -403,29 +409,29 @@
 
             <!-- 配置管理区域 -->
             <section id="config" class="mb-12">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover-scale">
-                    <h2 class="text-2xl font-bold mb-6">配置管理</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                    <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">配置管理</h2>
                     <div class="mb-8">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold">基本配置</h3>
-                            <button id="save-config" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">基本配置</h3>
+                            <button id="save-config" class="px-4 py-2 bg-gradient-to-r from-primary to-accent text-white rounded-lg hover:shadow-lg transition-all btn-hover">
                                 <i class="fa fa-save mr-2"></i>保存配置
                             </button>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">用户ID列表</label>
-                                <textarea id="user-id-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" rows="3" placeholder="请输入用户ID，多个ID用逗号分隔或换行"></textarea>
+                                <textarea id="user-id-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg"></textarea>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">也可以输入user_id_list.txt文件路径</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">搜索关键词列表</label>
-                                <textarea id="query-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" rows="3" placeholder="请输入搜索关键词，多个关键词用逗号分隔或换行"></textarea>
+                                <textarea id="query-list" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg"></textarea>
                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">设置后将按关键词搜索微博</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">爬取模式</label>
-                                <select id="only-crawl-original" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none">
+                                <select id="only-crawl-original" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg">
                                     <option value="0">爬取全部微博</option>
                                     <option value="1">仅爬取原创微博</option>
                                 </select>
@@ -433,7 +439,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">起始日期</label>
                                 <div class="flex space-x-2">
-                                    <input type="number" id="since-date-days" class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="天数">
+                                    <input type="number" id="since-date-days" class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="天数">
                                     <span class="flex items-center text-gray-500">天前</span>
                                 </div>
                             </div>
@@ -442,11 +448,11 @@
                                 <div class="grid grid-cols-2 gap-2 mb-4">
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="write-csv" class="rounded text-primary focus:ring-primary/50" checked>
-                                        <span>CSV</span>
+                                        <span class="text-gray-700 dark:text-gray-300">CSV</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="write-json" class="rounded text-primary focus:ring-primary/50">
-                                        <span>JSON</span>
+                                        <span class="text-gray-700 dark:text-gray-300">JSON</span>
                                     </label>
                                 </div>
                                 
@@ -454,15 +460,15 @@
                                 <div class="grid grid-cols-3 gap-2">
                                     <label class="flex items-center space-x-2">
                                         <input type="radio" name="database" id="db-sqlite" class="rounded-full text-primary focus:ring-primary/50" checked>
-                                        <span>SQLite</span>
+                                        <span class="text-gray-700 dark:text-gray-300">SQLite</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="radio" name="database" id="db-mysql" class="rounded-full text-primary focus:ring-primary/50">
-                                        <span>MySQL</span>
+                                        <span class="text-gray-700 dark:text-gray-300">MySQL</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="radio" name="database" id="db-mongodb" class="rounded-full text-primary focus:ring-primary/50">
-                                        <span>MongoDB</span>
+                                        <span class="text-gray-700 dark:text-gray-300">MongoDB</span>
                                     </label>
                                 </div>
                             </div>
@@ -470,18 +476,18 @@
                     </div>
 
                     <div class="mb-8">
-                        <h3 class="text-lg font-semibold mb-4">下载选项</h3>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">下载选项</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">图片下载</label>
                                 <div class="space-y-2">
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="original-pic" class="rounded text-primary focus:ring-primary/50" checked>
-                                        <span>原创微博图片</span>
+                                        <span class="text-gray-700 dark:text-gray-300">原创微博图片</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="retweet-pic" class="rounded text-primary focus:ring-primary/50">
-                                        <span>转发微博图片</span>
+                                        <span class="text-gray-700 dark:text-gray-300">转发微博图片</span>
                                     </label>
                                 </div>
                             </div>
@@ -490,11 +496,11 @@
                                 <div class="space-y-2">
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="original-video" class="rounded text-primary focus:ring-primary/50" checked>
-                                        <span>原创微博视频</span>
+                                        <span class="text-gray-700 dark:text-gray-300">原创微博视频</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="retweet-video" class="rounded text-primary focus:ring-primary/50">
-                                        <span>转发微博视频</span>
+                                        <span class="text-gray-700 dark:text-gray-300">转发微博视频</span>
                                     </label>
                                 </div>
                             </div>
@@ -503,115 +509,126 @@
                                 <div class="space-y-2">
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="download-comment" class="rounded text-primary focus:ring-primary/50" checked>
-                                        <span>下载评论</span>
+                                        <span class="text-gray-700 dark:text-gray-300">下载评论</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="download-repost" class="rounded text-primary focus:ring-primary/50" checked>
-                                        <span>下载转发</span>
+                                        <span class="text-gray-700 dark:text-gray-300">下载转发</span>
                                     </label>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <h3 class="text-lg font-semibold mb-4">高级配置</h3>
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">高级配置</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cookie</label>
-                                <textarea id="cookie" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" rows="2" placeholder="your cookie"></textarea>
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Cookie</label>
+                                    <button 
+                                        id="get-cookie-btn" 
+                                        class="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
+                                        onclick="showCookieStepsModal()"
+                                    >
+                                        <i class="fa fa-question-circle mr-1"></i>获取步骤
+                                    </button>
+                                </div>
+                                <textarea id="cookie" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg"></textarea>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">点击按钮自动获取微博Cookie，无需手动复制</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">其他选项</label>
                                 <div class="space-y-2">
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="remove-html-tag" class="rounded text-primary focus:ring-primary/50" checked>
-                                        <span>移除HTML标签</span>
+                                        <span class="text-gray-700 dark:text-gray-300">移除HTML标签</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="checkbox" id="user-id-as-folder" class="rounded text-primary focus:ring-primary/50">
-                                        <span>使用用户ID作为文件夹名</span>
+                                        <span class="text-gray-700 dark:text-gray-300">使用用户ID作为文件夹名</span>
                                     </label>
                                 </div>
                             </div>
+                        </div>
                     </div>
 
-                    <div class="mb-8">
+                    <div class="mb-8" id="mysql-config">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">MySQL配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
+                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">MySQL配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
                             <label class="flex items-center space-x-2">
                                 <input type="checkbox" id="enable-mysql" class="rounded text-primary focus:ring-primary/50">
-                                <span>启用MySQL</span>
+                                <span class="text-gray-700 dark:text-gray-300">启用MySQL</span>
                             </label>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">主机</label>
-                                <input type="text" id="mysql-host" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="localhost">
+                                <input type="text" id="mysql-host" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="localhost">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">端口</label>
-                                <input type="number" id="mysql-port" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="3306" value="3306">
+                                <input type="number" id="mysql-port" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="3306" value="3306">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">用户名</label>
-                                <input type="text" id="mysql-user" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="root">
+                                <input type="text" id="mysql-user" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="root">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">密码</label>
-                                <input type="password" id="mysql-password" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="password">
+                                <input type="password" id="mysql-password" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="password">
                             </div>
                             <div class="md:col-span-2 lg:col-span-4">
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字符集</label>
-                                <input type="text" id="mysql-charset" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="utf8mb4" value="utf8mb4">
+                                <input type="text" id="mysql-charset" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="utf8mb4" value="utf8mb4">
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-8">
+                    <div class="mb-8" id="mongodb-config">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">MongoDB配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
+                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">MongoDB配置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
                             <label class="flex items-center space-x-2">
                                 <input type="checkbox" id="enable-mongodb" class="rounded text-primary focus:ring-primary/50">
-                                <span>启用MongoDB</span>
+                                <span class="text-gray-700 dark:text-gray-300">启用MongoDB</span>
                             </label>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">MongoDB URI</label>
-                            <input type="text" id="mongodb-uri" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]">
+                            <input type="text" id="mongodb-uri" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]">
                         </div>
                     </div>
 
                     <div class="mb-8">
-                        <h3 class="text-lg font-semibold mb-4">定期自动爬取设置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">定期自动爬取设置 <span class="text-xs text-gray-500 dark:text-gray-400">(可选)</span></h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">自动爬取频率</label>
                                 <div class="space-y-2">
                                     <label class="flex items-center space-x-2">
                                         <input type="radio" name="schedule-frequency" value="hourly" class="text-primary focus:ring-primary/50">
-                                        <span>每小时</span>
+                                        <span class="text-gray-700 dark:text-gray-300">每小时</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="radio" name="schedule-frequency" value="daily" class="text-primary focus:ring-primary/50">
-                                        <span>每天</span>
+                                        <span class="text-gray-700 dark:text-gray-300">每天</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="radio" name="schedule-frequency" value="weekly" class="text-primary focus:ring-primary/50">
-                                        <span>每周</span>
+                                        <span class="text-gray-700 dark:text-gray-300">每周</span>
                                     </label>
                                     <label class="flex items-center space-x-2">
                                         <input type="radio" name="schedule-frequency" value="custom" class="text-primary focus:ring-primary/50">
-                                        <span>自定义</span>
+                                        <span class="text-gray-700 dark:text-gray-300">自定义</span>
                                     </label>
                                 </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">自定义间隔（分钟）</label>
-                                <input type="number" id="custom-interval" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="60" value="60">
+                                <input type="number" id="custom-interval" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="60" value="60">
                                 <label class="flex items-center space-x-2 mt-4">
                                     <input type="checkbox" id="enable-schedule" class="rounded text-primary focus:ring-primary/50">
-                                    <span>启用定期自动爬取</span>
+                                    <span class="text-gray-700 dark:text-gray-300">启用定期自动爬取</span>
                                 </label>
                             </div>
                         </div>
@@ -621,63 +638,47 @@
 
             <!-- 任务执行区域 -->
             <section id="tasks" class="mb-12">
-                <div id="taskProgress" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover-scale">
-                    <h2 class="text-2xl font-bold mb-6">任务执行</h2>
-                    
-                    <!-- 任务状态指示器 -->
-                    <div class="flex items-center mb-6">
-                        <span class="text-gray-700 dark:text-gray-300">任务状态:</span>
-                        <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-300 rounded-full ml-2"></span>
-                        <span id="status-text" class="ml-2 text-gray-700 dark:text-gray-300">未运行</span>
-                    </div>
-                    
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                    <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">任务执行</h2>
                     <div class="mb-6">
                         <div class="flex flex-col sm:flex-row gap-4">
-                            <button id="start-task" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex-1 flex items-center justify-center">
-                                <div class="icon mr-2"></div>开始爬取
+                            <button id="start-task" class="px-6 py-3 bg-gradient-to-r from-success to-green-500 text-white rounded-lg hover:shadow-lg transition-all btn-hover flex-1 flex items-center justify-center">
+                                <i class="fa fa-play mr-2"></i>开始爬取
                             </button>
-                            <button id="stop-task" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex-1 flex items-center justify-center" disabled>
-                                <div class="icon mr-2"></div>停止爬取
-                            </button>
-                            <button id="clear-logs" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex-1 flex items-center justify-center">
-                                <div class="icon mr-2"></div>清空日志
+                            <button id="stop-task" class="px-6 py-3 bg-gradient-to-r from-danger to-red-500 text-white rounded-lg hover:shadow-lg transition-all btn-hover flex-1 flex items-center justify-center" disabled>
+                                <i class="fa fa-stop mr-2"></i>停止爬取
                             </button>
                         </div>
                     </div>
                     
                     <div class="mb-6">
-                        <h3 class="text-lg font-semibold mb-4">任务进度</h3>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2">
-                            <div id="progress-bar" class="bg-primary h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">任务进度</h3>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2 overflow-hidden">
+                            <div id="progress-bar" class="bg-gradient-to-r from-primary to-accent h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
                         </div>
-                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-300">
                             <span id="progress-text">0%</span>
                             <span id="progress-status">准备就绪</span>
                         </div>
                     </div>
 
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold mb-4">任务日志</h3>
-                        <div id="task-log" class="w-full h-64 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 overflow-y-auto text-sm font-mono"></div>
-                    </div>
-                    
                     <div>
-                        <h3 class="text-lg font-semibold mb-4">详细日志</h3>
-                        <div id="logs-content" class="w-full h-40 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 overflow-y-auto text-sm font-mono"></div>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">任务日志</h3>
+                        <div id="task-log" class="w-full h-64 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 overflow-y-auto text-sm font-mono shadow-inner"></div>
                     </div>
                 </div>
             </section>
 
             <!-- 结果管理区域 -->
             <section id="results" class="mb-12">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover-scale">
-                    <h2 class="text-2xl font-bold mb-6">结果管理</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                    <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">结果管理</h2>
                     <div class="flex justify-between items-center mb-4">
                         <div class="relative">
-                            <input type="text" id="search-results" class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none" placeholder="搜索结果...">
+                            <input type="text" id="search-results" class="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg" placeholder="搜索结果...">
                             <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
-                        <button id="refresh-results" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <button id="refresh-results" class="px-4 py-2 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:shadow-lg transition-all btn-hover">
                             <i class="fa fa-refresh mr-2"></i>刷新
                         </button>
                     </div>
@@ -685,11 +686,11 @@
                         <table class="w-full">
                             <thead>
                                 <tr class="border-b border-gray-200 dark:border-gray-700">
-                                    <th class="text-left py-3 px-4 font-semibold">用户</th>
-                                    <th class="text-left py-3 px-4 font-semibold">微博数</th>
-                                    <th class="text-left py-3 px-4 font-semibold">文件数</th>
-                                    <th class="text-left py-3 px-4 font-semibold">最后更新</th>
-                                    <th class="text-left py-3 px-4 font-semibold">操作</th>
+                                    <th class="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-200">用户</th>
+                                    <th class="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-200">微博数</th>
+                                    <th class="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-200">文件数</th>
+                                    <th class="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-200">最后更新</th>
+                                    <th class="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-200">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="results-table">
@@ -704,40 +705,40 @@
 
             <!-- 日志查看区域 -->
             <section id="logs" class="mb-12">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover-scale">
-                    <h2 class="text-2xl font-bold mb-6">日志查看</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                    <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">日志查看</h2>
                     <div class="flex justify-between items-center mb-4">
-                        <select id="log-level" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none">
+                        <select id="log-level" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all focus:shadow-lg">
                             <option value="all">全部</option>
                             <option value="info">信息</option>
                             <option value="warning">警告</option>
                             <option value="error">错误</option>
                         </select>
-                        <button id="clear-logs" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        <button id="clear-logs" class="px-4 py-2 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:shadow-lg transition-all btn-hover">
                             <i class="fa fa-trash mr-2"></i>清空
                         </button>
                     </div>
-                    <div id="logs-content" class="w-full h-96 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 overflow-y-auto text-sm font-mono"></div>
+                    <div id="logs-content" class="w-full h-96 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 overflow-y-auto text-sm font-mono shadow-inner"></div>
                 </div>
             </section>
 
             <!-- 关于区域 -->
             <section id="about" class="mb-12">
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover-scale">
-                    <h2 class="text-2xl font-bold mb-6">关于</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                    <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">关于</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <h3 class="text-lg font-semibold mb-4">我推 - My Favorite</h3>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">我推 - My Favorite</h3>
                             <p class="text-gray-600 dark:text-gray-300 mb-4">这是一个功能强大的微博爬虫可视化工具，可以帮助您轻松爬取微博用户数据。</p>
                             <ul class="space-y-2 text-gray-600 dark:text-gray-300">
-                                <li><i class="fa fa-check text-success mr-2"></i>支持多用户同时爬取</li>
-                                <li><i class="fa fa-check text-success mr-2"></i>支持多种数据格式导出</li>
-                                <li><i class="fa fa-check text-success mr-2"></i>支持图片、视频下载</li>
-                                <li><i class="fa fa-check text-success mr-2"></i>支持评论、转发爬取</li>
+                                <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i>支持多用户同时爬取</li>
+                                <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i>支持多种数据格式导出</li>
+                                <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i>支持图片、视频下载</li>
+                                <li class="flex items-center"><i class="fa fa-check text-success mr-2"></i>支持评论、转发爬取</li>
                             </ul>
                         </div>
                         <div>
-                            <h3 class="text-lg font-semibold mb-4">使用说明</h3>
+                            <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">使用说明</h3>
                             <ol class="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-300">
                                 <li>在配置管理中设置爬取参数</li>
                                 <li>点击保存配置按钮</li>
@@ -747,18 +748,36 @@
                             </ol>
                         </div>
                     </div>
+                    
+                    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">技术栈</h3>
+                        <div class="flex flex-wrap gap-4">
+                            <div class="bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-full">
+                                <span class="text-blue-600 dark:text-blue-400 font-medium">Vue 3</span>
+                            </div>
+                            <div class="bg-green-50 dark:bg-green-900/30 px-4 py-2 rounded-full">
+                                <span class="text-green-600 dark:text-green-400 font-medium">Vite</span>
+                            </div>
+                            <div class="bg-purple-50 dark:bg-purple-900/30 px-4 py-2 rounded-full">
+                                <span class="text-purple-600 dark:text-purple-400 font-medium">Tailwind CSS</span>
+                            </div>
+                            <div class="bg-yellow-50 dark:bg-yellow-900/30 px-4 py-2 rounded-full">
+                                <span class="text-yellow-600 dark:text-yellow-400 font-medium">Chart.js</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
     </div>
 
     <!-- 文件预览模态框 -->
-    <div id="file-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
+    <div id="file-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden animate-fadeIn">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h3 class="text-lg font-semibold" id="modal-title">文件预览</h3>
-                <button id="close-modal" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                    <i class="fa fa-times"></i>
+                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200" id="modal-title">文件预览</h3>
+                <button id="close-modal" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all transform hover:scale-110">
+                    <i class="fa fa-times text-gray-600 dark:text-gray-300"></i>
                 </button>
             </div>
             <div class="p-4 overflow-y-auto max-h-[calc(90vh-100px)]" id="modal-content">
@@ -786,84 +805,64 @@
             }
         });
 
-        // 导航链接高亮
+        // 设置导航链接高亮
+        function setActiveNavLink() {
+            // 获取当前URL的哈希值
+            const hash = window.location.hash || '#dashboard';
+            
+            // 移除所有高亮
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('bg-primary/10', 'text-primary', 'dark:bg-primary/20', 'dark:text-primary', 'font-medium', 'shadow-sm');
+                el.classList.add('hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            });
+            
+            // 添加当前高亮
+            const activeLink = document.querySelector(`.nav-link[href="${hash}"]`);
+            if (activeLink) {
+                activeLink.classList.add('bg-primary/10', 'text-primary', 'dark:bg-primary/20', 'dark:text-primary', 'font-medium', 'shadow-sm');
+                activeLink.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            }
+            
+            // 隐藏所有内容区域
+            document.querySelectorAll('main > section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // 显示对应的内容区域
+            const targetId = hash.substring(1); // 移除 # 符号
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.style.display = 'block';
+            }
+        }
+        
+        // 导航链接高亮和内容显示控制
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                // 移除所有高亮
-                document.querySelectorAll('.nav-link').forEach(el => {
-                    el.classList.remove('bg-primary/10', 'text-primary', 'dark:bg-primary/20', 'dark:text-secondary', 'font-medium');
-                    el.classList.add('hover:bg-gray-100', 'dark:hover:bg-gray-700');
-                });
-                // 添加当前高亮
-                this.classList.add('bg-primary/10', 'text-primary', 'dark:bg-primary/20', 'dark:text-secondary', 'font-medium');
-                this.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700');
                 
-                // 平滑滚动到对应区域
-                const targetId = this.getAttribute('href');
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth' });
-                }
+                // 更新URL哈希
+                window.location.hash = this.getAttribute('href');
             });
         });
+        
+        // 监听哈希变化事件
+        window.addEventListener('hashchange', setActiveNavLink);
+        
+        // 页面初始加载时设置高亮
+        document.addEventListener('DOMContentLoaded', setActiveNavLink);
 
-        // 初始化爬取趋势图表（添加错误处理）
-        if (typeof Chart !== 'undefined') {
-            try {
-                const ctx = document.getElementById('crawl-chart').getContext('2d');
-                const crawlChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-                        datasets: [{
-                            label: '爬取微博数',
-                            data: [120, 190, 300, 500, 270, 430, 360],
-                            borderColor: '#1E40AF',
-                            backgroundColor: 'rgba(30, 64, 175, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            }
-                        }
-                    }
-                });
-            } catch (e) {
-                console.warn('图表初始化失败:', e);
-            }
-        } else {
-            console.warn('Chart.js未加载，跳过图表初始化');
-        }
+        // 移除Chart.js相关代码，避免ReferenceError
+        // 可以根据需要添加其他图表库或简化图表实现
 
-        // 模拟数据
+        // 简单的模拟数据加载函数
         function loadMockData() {
-            // 仪表盘数据
+            // 模拟数据
             document.getElementById('user-count').textContent = '42';
             document.getElementById('weibo-count').textContent = '1,256';
             document.getElementById('file-count').textContent = '58';
             document.getElementById('success-rate').textContent = '98%';
             
-            // 最近爬取用户
             const recentUsersHtml = `
                 <tr class="border-b border-gray-200 dark:border-gray-700">
                     <td class="py-3 px-4"><div class="flex items-center"><div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mr-2"><i class="fa fa-user text-blue-500"></i></div> 迪丽热巴</div></td>
@@ -875,7 +874,7 @@
                     <td class="py-3 px-4">85</td>
                     <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-full text-xs">成功</span></td>
                 </tr>
-                <tr class="border-b border-gray-200 dark:border-gray-700">
+                <tr>
                     <td class="py-3 px-4"><div class="flex items-center"><div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mr-2"><i class="fa fa-user text-purple-500"></i></div> 杨幂</div></td>
                     <td class="py-3 px-4">156</td>
                     <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-full text-xs">成功</span></td>
@@ -883,148 +882,231 @@
             `;
             document.getElementById('recent-users').innerHTML = recentUsersHtml;
             
-            // 结果表格数据
-            const resultsHtml = `
-                <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                    <td class="py-3 px-4"><div class="flex items-center"><div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mr-3"><i class="fa fa-user text-blue-500"></i></div> 迪丽热巴</div></td>
-                    <td class="py-3 px-4">1,245</td>
-                    <td class="py-3 px-4">36</td>
-                    <td class="py-3 px-4">2023-08-21 15:30</td>
-                    <td class="py-3 px-4">
-                        <button class="view-btn px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm mr-2" data-user="迪丽热巴">查看</button>
-                        <button class="download-btn px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">下载</button>
-                    </td>
-                </tr>
-                <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                    <td class="py-3 px-4"><div class="flex items-center"><div class="w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/50 flex items-center justify-center mr-3"><i class="fa fa-user text-pink-500"></i></div> 郭碧婷</div></td>
-                    <td class="py-3 px-4">876</td>
-                    <td class="py-3 px-4">24</td>
-                    <td class="py-3 px-4">2023-08-21 14:15</td>
-                    <td class="py-3 px-4">
-                        <button class="view-btn px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm mr-2" data-user="郭碧婷">查看</button>
-                        <button class="download-btn px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">下载</button>
-                    </td>
-                </tr>
-                <tr class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                    <td class="py-3 px-4"><div class="flex items-center"><div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mr-3"><i class="fa fa-user text-purple-500"></i></div> 杨幂</div></td>
-                    <td class="py-3 px-4">2,345</td>
-                    <td class="py-3 px-4">56</td>
-                    <td class="py-3 px-4">2023-08-21 12:45</td>
-                    <td class="py-3 px-4">
-                        <button class="view-btn px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm mr-2" data-user="杨幂">查看</button>
-                        <button class="download-btn px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">下载</button>
-                    </td>
-                </tr>
-            `;
-            document.getElementById('results-table').innerHTML = resultsHtml;
+            // 照片墙模拟数据
+            loadMockPhotoWallData();
+        }
+        
+        // 照片墙模拟数据加载函数
+        function loadMockPhotoWallData() {
+            // 模拟照片墙数据
+            const samplePhotos = [];
+            for (let i = 1; i <= 30; i++) {
+                samplePhotos.push({
+                    id: `sample_${i}`,
+                    url: `https://picsum.photos/800/600?random=sample_${i}`,
+                    thumbnail: `https://picsum.photos/200/200?random=sample_${i}`,
+                    filename: `sample_image_${i}.jpg`,
+                    size: `${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 100).toString().padStart(2, '0')} MB`,
+                    created: new Date().toISOString()
+                });
+            }
             
-            // 配置数据将通过loadSavedConfig函数从服务器或本地存储加载，不再使用硬编码值
+            // 保存到localStorage
+            localStorage.setItem('photoWall', JSON.stringify(samplePhotos));
             
-            // 加载数据库配置
-            document.getElementById('mysql-host').value = 'localhost';
-            document.getElementById('mysql-port').value = '3306';
-            document.getElementById('mysql-user').value = 'root';
-            document.getElementById('mysql-password').value = '123456';
-            document.getElementById('mysql-charset').value = 'utf8mb4';
-            document.getElementById('mongodb-uri').value = 'mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]';
+            // 更新照片墙显示
+            updatePhotoWallDisplay();
+        }
+        
+        // 更新照片墙显示
+        function updatePhotoWallDisplay() {
+            // 从localStorage获取照片墙数据
+            const photoWallData = JSON.parse(localStorage.getItem('photoWall') || '[]');
+            const photoGrid = document.getElementById('photo-grid');
+            const photoCount = document.getElementById('photo-count');
+            const selectedPhotoCount = document.getElementById('selected-photo-count');
+            const batchDeleteBtn = document.getElementById('batch-delete-photos');
+            const clearPhotoWallBtn = document.getElementById('clear-photo-wall');
             
-            // 添加查看按钮事件
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const user = this.getAttribute('data-user');
-                    showFileModal(user);
+            // 更新照片数量
+            photoCount.textContent = `${photoWallData.length} 张图片`;
+            selectedPhotoCount.textContent = `(0 / ${photoWallData.length})`;
+            
+            // 更新按钮状态
+            batchDeleteBtn.disabled = photoWallData.length === 0;
+            clearPhotoWallBtn.disabled = photoWallData.length === 0;
+            
+            // 如果没有照片，显示空状态
+            if (photoWallData.length === 0) {
+                photoGrid.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-500 dark:text-gray-400">
+                        <i class="fa fa-picture-o text-4xl mb-3"></i>
+                        <h3 class="text-lg font-semibold mb-2">照片墙为空</h3>
+                        <p>从结果管理页面选择图片添加到照片墙</p>
+                    </div>
+                `;
+                document.getElementById('photo-pagination').style.display = 'none';
+                return;
+            }
+            
+            // 显示分页控件
+            document.getElementById('photo-pagination').style.display = 'flex';
+            
+            // 生成照片墙HTML
+            let photoHtml = '';
+            photoWallData.forEach(photo => {
+                photoHtml += `
+                    <div class="relative group">
+                        <!-- 图片卡片 -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all">
+                            <div class="relative aspect-square overflow-hidden">
+                                <img src="${photo.thumbnail}" alt="${photo.filename}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                                
+                                <!-- 选择复选框 -->
+                                <div class="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <input type="checkbox" class="photo-checkbox rounded text-primary focus:ring-primary/50" data-photo-id="${photo.id}">
+                                </div>
+                                
+                                <!-- 图片信息 -->
+                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end">
+                                    <div class="p-3 w-full">
+                                        <p class="text-white text-sm truncate">${photo.filename}</p>
+                                        <p class="text-gray-300 text-xs">${photo.size}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            photoGrid.innerHTML = photoHtml;
+            
+            // 绑定照片复选框事件
+            bindPhotoCheckboxEvents();
+        }
+        
+        // 绑定照片复选框事件
+        function bindPhotoCheckboxEvents() {
+            const checkboxes = document.querySelectorAll('.photo-checkbox');
+            const selectAllCheckbox = document.getElementById('select-all-photos');
+            const selectedPhotoCount = document.getElementById('selected-photo-count');
+            const batchDeleteBtn = document.getElementById('batch-delete-photos');
+            
+            // 单个复选框事件
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateSelectedPhotoCount();
                 });
             });
+            
+            // 全选复选框事件
+            selectAllCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                });
+                updateSelectedPhotoCount();
+            });
         }
-
-        // 显示文件预览模态框
-        function showFileModal(user) {
-            const modal = document.getElementById('file-modal');
-            const title = document.getElementById('modal-title');
-            const content = document.getElementById('modal-content');
+        
+        // 更新选中照片数量
+        function updateSelectedPhotoCount() {
+            const checkboxes = document.querySelectorAll('.photo-checkbox');
+            const selectedCheckboxes = document.querySelectorAll('.photo-checkbox:checked');
+            const selectedPhotoCount = document.getElementById('selected-photo-count');
+            const batchDeleteBtn = document.getElementById('batch-delete-photos');
             
-            title.textContent = `${user} 的文件列表`;
+            const total = checkboxes.length;
+            const selected = selectedCheckboxes.length;
             
-            // 模拟文件列表
-            const filesHtml = `
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fa fa-file-text text-blue-500 text-xl mr-3"></i>
-                            <div>
-                                <p class="font-medium">${user}_data.csv</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">2.5 MB · CSV文件</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">预览</button>
-                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">下载</button>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fa fa-file-text text-red-500 text-xl mr-3"></i>
-                            <div>
-                                <p class="font-medium">${user}_data.json</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">3.8 MB · JSON文件</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">预览</button>
-                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">下载</button>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fa fa-folder text-yellow-500 text-xl mr-3"></i>
-                            <div>
-                                <p class="font-medium">images/</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">36 个文件</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">查看</button>
-                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">下载</button>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <div class="flex items-center">
-                            <i class="fa fa-folder text-green-500 text-xl mr-3"></i>
-                            <div>
-                                <p class="font-medium">videos/</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">12 个文件</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button class="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">查看</button>
-                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">下载</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+            selectedPhotoCount.textContent = `(${selected} / ${total})`;
+            batchDeleteBtn.innerHTML = `<i class="fa fa-trash mr-2"></i>删除 (${selected})`;
+            batchDeleteBtn.disabled = selected === 0;
             
-            content.innerHTML = filesHtml;
-            modal.classList.remove('hidden');
+            // 更新全选复选框状态
+            document.getElementById('select-all-photos').checked = selected === total && total > 0;
         }
-
-        // 关闭模态框
-        document.getElementById('close-modal').addEventListener('click', () => {
-            document.getElementById('file-modal').classList.add('hidden');
+        
+        // 照片墙控制栏切换
+        document.getElementById('toggle-photo-controls').addEventListener('click', function() {
+            const controls = document.getElementById('photo-controls');
+            controls.classList.toggle('hidden');
+        });
+        
+        // 布局模式切换
+        document.getElementById('layout-grid').addEventListener('click', function() {
+            const photoGrid = document.getElementById('photo-grid');
+            photoGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4';
+            
+            // 更新按钮样式
+            this.classList.add('bg-primary', 'text-white');
+            this.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+            document.getElementById('layout-masonry').classList.remove('bg-primary', 'text-white');
+            document.getElementById('layout-masonry').classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+        });
+        
+        document.getElementById('layout-masonry').addEventListener('click', function() {
+            const photoGrid = document.getElementById('photo-grid');
+            photoGrid.className = 'columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4';
+            
+            // 更新按钮样式
+            this.classList.add('bg-primary', 'text-white');
+            this.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+            document.getElementById('layout-grid').classList.remove('bg-primary', 'text-white');
+            document.getElementById('layout-grid').classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-800', 'dark:text-gray-200');
+        });
+        
+        // 批量删除照片
+        document.getElementById('batch-delete-photos').addEventListener('click', function() {
+            const selectedCheckboxes = document.querySelectorAll('.photo-checkbox:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert('请先选择要删除的图片');
+                return;
+            }
+            
+            if (confirm(`确定要删除选中的 ${selectedCheckboxes.length} 张图片吗？`)) {
+                // 获取选中的照片ID
+                const selectedIds = Array.from(selectedCheckboxes).map(checkbox => checkbox.dataset.photoId);
+                
+                // 从localStorage获取照片墙数据
+                const photoWallData = JSON.parse(localStorage.getItem('photoWall') || '[]');
+                
+                // 删除选中的照片
+                const updatedPhotoWall = photoWallData.filter(photo => !selectedIds.includes(photo.id));
+                
+                // 保存到localStorage
+                localStorage.setItem('photoWall', JSON.stringify(updatedPhotoWall));
+                
+                // 更新照片墙显示
+                updatePhotoWallDisplay();
+            }
+        });
+        
+        // 清空照片墙
+        document.getElementById('clear-photo-wall').addEventListener('click', function() {
+            if (confirm('确定要清空整个照片墙吗？此操作不可恢复。')) {
+                // 清空localStorage
+                localStorage.removeItem('photoWall');
+                
+                // 更新照片墙显示
+                updatePhotoWallDisplay();
+            }
+        });
+        
+        // 每页显示数量变化
+        document.getElementById('photo-page-size').addEventListener('change', function() {
+            // 这里可以添加分页逻辑
+            console.log('每页显示数量变化为:', this.value);
         });
 
-        // 点击模态框外部关闭
-        document.getElementById('file-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('file-modal')) {
-                document.getElementById('file-modal').classList.add('hidden');
-            }
+        // 页面加载时调用模拟数据加载函数
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMockData();
+            
+            // 默认只显示SQLite
+            const mysqlConfig = document.getElementById('mysql-config');
+            const mongodbConfig = document.getElementById('mongodb-config');
+            mysqlConfig.style.display = 'none';
+            mongodbConfig.style.display = 'none';
         });
 
         // 数据库单选按钮事件处理
         document.querySelectorAll('input[name="database"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 // 根据选择的数据库类型更新配置显示
-                const mysqlConfig = document.querySelector('#enable-mysql').closest('.mb-8');
-                const mongodbConfig = document.querySelector('#enable-mongodb').closest('.mb-8');
+                const mysqlConfig = document.getElementById('mysql-config');
+                const mongodbConfig = document.getElementById('mongodb-config');
                 
                 if (this.id === 'db-mysql') {
                     mysqlConfig.style.display = 'block';
@@ -1040,949 +1122,160 @@
                 }
             });
         });
-
-        // 页面加载时隐藏未选中的数据库配置
-        document.addEventListener('DOMContentLoaded', function() {
-            const mysqlConfig = document.querySelector('#enable-mysql').closest('.mb-8');
-            const mongodbConfig = document.querySelector('#enable-mongodb').closest('.mb-8');
-            
-            // 默认只显示SQLite
-            mysqlConfig.style.display = 'none';
-            mongodbConfig.style.display = 'none';
-        });
-
-        // 保存配置到服务器
-        async function saveConfigToServer(config) {
-            try {
-                // 验证必要的配置项
-                if (!config) {
-                    console.error('配置对象为空');
-                    return { success: false, error: '配置对象为空' };
-                }
-                
-                console.log('准备保存配置到服务器:', config);
-                
-                // 保存基础配置
-                console.log('正在保存基础配置...');
-                const baseResponse = await fetch('/config/base', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        user_id_list: config.user_id_list,
-                        query_list: config.query_list,
-                        only_crawl_original: config.only_crawl_original,
-                        since_date: config.since_date,
-                        write_mode: config.write_mode,
-                        original_pic_download: config.original_pic_download,
-                        retweet_pic_download: config.retweet_pic_download,
-                        original_video_download: config.original_video_download,
-                        retweet_video_download: config.retweet_video_download,
-                        download_comment: config.download_comment,
-                        download_repost: config.download_repost,
-                        remove_html_tag: config.remove_html_tag,
-                        user_id_as_folder_name: config.user_id_as_folder_name,
-                        cookie: config.cookie
-                    })
-                });
-                
-                const baseData = await baseResponse.json();
-                console.log('基础配置保存响应:', baseResponse.status, baseData);
-                
-                if (!baseResponse.ok || !baseData.success) {
-                    throw new Error(`保存基础配置失败: ${baseData.error || '未知错误'}`);
-                }
-                
-                // 根据选择的数据库类型决定是否保存数据库配置
-                const selectedDb = document.querySelector('input[name="database"]:checked');
-                
-                // 准备要发送的数据库配置
-                const dbConfig = {};
-                if (selectedDb) {
-                    console.log(`正在保存${selectedDb.id === 'db-mysql' ? 'MySQL' : 'MongoDB'}数据库配置...`);
-                    if (selectedDb.id === 'db-mysql' && config.mysql_config) {
-                        dbConfig.mysql_config = config.mysql_config;
-                    } else if (selectedDb.id === 'db-mongodb' && config.mongodb_URI) {
-                        dbConfig.mongodb_URI = config.mongodb_URI;
-                    }
-                    
-                    const response = await fetch('/config/database', {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(dbConfig)
-                    });
-                    
-                    const dbData = await response.json();
-                    console.log('数据库配置保存响应:', response.status, dbData);
-                    
-                    if (!response.ok || !dbData.success) {
-                        throw new Error(`保存数据库配置失败: ${dbData.error || '未知错误'}`);
-                    }
-                } else {
-                    console.log('未选择数据库，跳过数据库配置保存');
-                }
-                
-                // 保存定期爬取配置
-                console.log('正在保存定期爬取配置...');
-                const scheduleResponse = await fetch('/config/schedule', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(config.schedule_config || { enabled: false })
-                });
-                
-                const scheduleData = await scheduleResponse.json();
-                console.log('定期爬取配置保存响应:', scheduleResponse.status, scheduleData);
-                
-                if (!scheduleResponse.ok) {
-                    throw new Error(`保存定时配置失败: ${scheduleData.error || '未知错误'}`);
-                }
-                
-                console.log('所有配置保存成功');
-                return { success: true, message: '配置保存成功' };
-            } catch (error) {
-                console.error('保存配置到服务器失败:', error);
-                return { success: false, error: error.message || '保存失败' };
-            }
-        }
         
-        // 保存配置
-        document.getElementById('save-config').addEventListener('click', async () => {
-            // 构建write_mode数组
-            const write_mode = [];
+        // 结果管理刷新按钮点击事件
+        document.getElementById('refresh-results').addEventListener('click', function() {
+            // 模拟刷新结果列表
+            console.log('刷新结果列表');
             
-            // 添加文件存储选项
-            if (document.getElementById('write-csv')?.checked) write_mode.push('csv');
-            if (document.getElementById('write-json')?.checked) write_mode.push('json');
-            
-            // 添加数据库选项（单选）
-            const selectedDb = document.querySelector('input[name="database"]:checked');
-            if (selectedDb) {
-                if (selectedDb.id === 'db-sqlite') write_mode.push('sqlite');
-                if (selectedDb.id === 'db-mysql') write_mode.push('mysql');
-                if (selectedDb.id === 'db-mongodb') write_mode.push('mongodb');
-            }
-            
-            // 保存配置
-            const config = {
-                user_id_list: document.getElementById('user-id-list')?.value || '',
-                query_list: document.getElementById('query-list')?.value || '',
-                only_crawl_original: document.getElementById('only-crawl-original')?.value || '',
-                since_date: document.getElementById('since-date-days')?.value || '',
-                write_mode: write_mode,
-                original_pic_download: document.getElementById('original-pic')?.checked ? 1 : 0,
-                retweet_pic_download: document.getElementById('retweet-pic')?.checked ? 1 : 0,
-                original_video_download: document.getElementById('original-video')?.checked ? 1 : 0,
-                retweet_video_download: document.getElementById('retweet-video')?.checked ? 1 : 0,
-                download_comment: document.getElementById('download-comment')?.checked ? 1 : 0,
-                download_repost: document.getElementById('download-repost')?.checked ? 1 : 0,
-                remove_html_tag: document.getElementById('remove-html-tag')?.checked ? 1 : 0,
-                user_id_as_folder_name: document.getElementById('user-id-as-folder')?.checked ? 1 : 0,
-                cookie: document.getElementById('cookie')?.value || '',
-                
-                // MySQL配置
-                mysql_config: {
-                    host: document.getElementById('mysql-host')?.value || '',
-                    port: document.getElementById('mysql-port') ? parseInt(document.getElementById('mysql-port').value) || 3306 : 3306,
-                    user: document.getElementById('mysql-user')?.value || '',
-                    password: document.getElementById('mysql-password')?.value || '',
-                    charset: document.getElementById('mysql-charset')?.value || 'utf8mb4'
+            // 更新结果列表的模拟数据
+            const resultsTable = document.getElementById('results-table');
+            const mockResults = [
+                {
+                    user: '迪丽热巴',
+                    weiboCount: 128,
+                    fileCount: 36,
+                    lastUpdate: '2023-08-21 15:30',
+                    status: '成功'
                 },
-                
-                // MongoDB配置
-                mongodb_URI: document.getElementById('mongodb-uri')?.value || '',
-                
-                // 定期爬取配置
-                schedule_config: {
-                    enabled: document.getElementById('enable-schedule')?.checked || false,
-                    frequency: document.querySelector('input[name="schedule-frequency"]:checked')?.value || 'daily',
-                    custom_interval: document.getElementById('custom-interval') ? parseInt(document.getElementById('custom-interval').value) || 60 : 60
+                {
+                    user: '郭碧婷',
+                    weiboCount: 85,
+                    fileCount: 24,
+                    lastUpdate: '2023-08-21 14:15',
+                    status: '成功'
+                },
+                {
+                    user: '杨幂',
+                    weiboCount: 156,
+                    fileCount: 56,
+                    lastUpdate: '2023-08-21 12:45',
+                    status: '成功'
+                },
+                {
+                    user: '赵丽颖',
+                    weiboCount: 98,
+                    fileCount: 42,
+                    lastUpdate: '2023-08-21 11:20',
+                    status: '成功'
+                },
+                {
+                    user: 'Angelababy',
+                    weiboCount: 145,
+                    fileCount: 48,
+                    lastUpdate: '2023-08-21 10:15',
+                    status: '成功'
                 }
-            };
+            ];
             
-            console.log('准备保存的配置:', config);
-            
-            // 保存配置到本地存储
-            try {
-                localStorage.setItem('weibo-crawler-config', JSON.stringify(config));
-                console.log('配置已保存到本地存储');
-            } catch (localStorageError) {
-                console.error('保存配置到本地存储失败:', localStorageError);
-            }
-            
-            // 保存配置到服务器
-            const serverResult = await saveConfigToServer(config);
-            
-            if (serverResult.success) {
-                alert('配置保存成功！所有设置已保存到服务器并会在重启后保留。');
-            } else {
-                alert(`配置保存失败！错误信息: ${serverResult.error || '未知错误'}\n配置已保存到本地，但服务器保存失败。`);
-            }
-        });
-        
-        // 从服务器加载配置
-        async function loadConfigFromServer() {
-            try {
-                // 获取基础配置
-                const baseResponse = await fetch('/config/base', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                // 获取数据库配置
-                const dbResponse = await fetch('/config/database', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                // 获取定时任务配置
-                const scheduleResponse = await fetch('/config/schedule', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (baseResponse.ok && dbResponse.ok && scheduleResponse.ok) {
-                    const baseConfig = await baseResponse.json();
-                    const dbConfig = await dbResponse.json();
-                    const scheduleConfig = await scheduleResponse.json();
-                    
-                    return {
-                    query_list: baseConfig.query_list,
-                    cookie: baseConfig.cookie,
-                    user_id_list: baseConfig.user_id_list,
-                    since_date: baseConfig.since_date,
-                    only_crawl_original: baseConfig.only_crawl_original,
-                    write_mode: baseConfig.write_mode,
-                    original_pic_download: baseConfig.original_pic_download,
-                    retweet_pic_download: baseConfig.retweet_pic_download,
-                    original_video_download: baseConfig.original_video_download,
-                    retweet_video_download: baseConfig.retweet_video_download,
-                    download_comment: baseConfig.download_comment,
-                    download_repost: baseConfig.download_repost,
-                    remove_html_tag: baseConfig.remove_html_tag,
-                    user_id_as_folder_name: baseConfig.user_id_as_folder_name,
-                    mysql_config: dbConfig.mysql_config,
-                    mongodb_URI: dbConfig.mongodb_URI,
-                    schedule_config: scheduleConfig
-                };
-                }
-                
-                return null;
-            } catch (error) {
-                console.error('从服务器加载配置失败:', error);
-                return null;
-            }
-        }
-        
-        // 加载保存的配置
-        async function loadSavedConfig() {
-            // 先尝试从服务器加载配置
-            const serverConfig = await loadConfigFromServer();
-            
-            if (serverConfig) {
-                console.log('从服务器加载的配置:', serverConfig);
-                
-                // 设置基础配置 - 关键项：用户ID列表和天数
-                const userIdListElem = document.getElementById('user-id-list');
-                if (userIdListElem && serverConfig.user_id_list) {
-                    // 确保将数组格式转换为逗号分隔的字符串
-                    const userIdStr = Array.isArray(serverConfig.user_id_list) 
-                        ? serverConfig.user_id_list.join(', ')
-                        : String(serverConfig.user_id_list);
-                    userIdListElem.value = userIdStr;
-                    console.log('已设置user_id_list值(从服务器):', userIdStr);
-                }
-                
-                // 设置天数 - 使用since_date
-                const sinceDateElem = document.getElementById('since-date-days');
-                if (sinceDateElem && serverConfig.since_date) {
-                    sinceDateElem.value = serverConfig.since_date;
-                    console.log('已设置since_date值(从服务器):', serverConfig.since_date);
-                }
-                
-                // 设置MySQL配置
-                if (serverConfig.mysql_config) {
-                    if (serverConfig.mysql_config.host) document.getElementById('mysql-host').value = serverConfig.mysql_config.host;
-                    if (serverConfig.mysql_config.port) document.getElementById('mysql-port').value = serverConfig.mysql_config.port;
-                    if (serverConfig.mysql_config.user) document.getElementById('mysql-user').value = serverConfig.mysql_config.user;
-                    if (serverConfig.mysql_config.password) document.getElementById('mysql-password').value = serverConfig.mysql_config.password;
-                    if (serverConfig.mysql_config.charset) document.getElementById('mysql-charset').value = serverConfig.mysql_config.charset;
-                }
-                
-                // 设置MongoDB配置
-                if (serverConfig.mongodb_URI) document.getElementById('mongodb-uri').value = serverConfig.mongodb_URI;
-                
-                // 设置其他基础配置
-                if (serverConfig.query_list) document.getElementById('query-list').value = serverConfig.query_list;
-                if (serverConfig.cookie) document.getElementById('cookie').value = serverConfig.cookie;
-                if (serverConfig.only_crawl_original !== undefined) document.getElementById('only-crawl-original').value = serverConfig.only_crawl_original;
-                
-                // 设置写入模式
-                if (serverConfig.write_mode) {
-                    document.getElementById('write-csv').checked = serverConfig.write_mode.includes('csv');
-                    document.getElementById('write-json').checked = serverConfig.write_mode.includes('json');
-                    // 数据库选项
-                    if (serverConfig.write_mode.includes('sqlite')) {
-                        document.getElementById('db-sqlite').checked = true;
-                    }
-                    if (serverConfig.write_mode.includes('mysql')) {
-                        document.getElementById('db-mysql').checked = true;
-                    }
-                    if (serverConfig.write_mode.includes('mongodb')) {
-                        document.getElementById('db-mongodb').checked = true;
-                    }
-                }
-                
-                // 设置下载选项
-                if (serverConfig.original_pic_download !== undefined) document.getElementById('original-pic').checked = serverConfig.original_pic_download;
-                if (serverConfig.retweet_pic_download !== undefined) document.getElementById('retweet-pic').checked = serverConfig.retweet_pic_download;
-                if (serverConfig.original_video_download !== undefined) document.getElementById('original-video').checked = serverConfig.original_video_download;
-                if (serverConfig.retweet_video_download !== undefined) document.getElementById('retweet-video').checked = serverConfig.retweet_video_download;
-                if (serverConfig.download_comment !== undefined) document.getElementById('download-comment').checked = serverConfig.download_comment;
-                if (serverConfig.download_repost !== undefined) document.getElementById('download-repost').checked = serverConfig.download_repost;
-                
-                // 设置定期爬取配置
-                if (serverConfig.schedule_config) {
-                    if (serverConfig.schedule_config.enabled !== undefined) document.getElementById('enable-schedule').checked = serverConfig.schedule_config.enabled;
-                    if (serverConfig.schedule_config.interval) {
-                        const freqInput = document.querySelector(`input[name="schedule-frequency"][value="${serverConfig.schedule_config.interval}"]`);
-                        if (freqInput) freqInput.checked = true;
-                    }
-                    if (serverConfig.schedule_config.custom_interval) document.getElementById('custom-interval').value = serverConfig.schedule_config.custom_interval;
-                }
-                
-                console.log('已从服务器加载配置');
-            } else {
-                // 如果服务器加载失败，尝试从本地存储加载
-                const savedConfig = localStorage.getItem('weibo-crawler-config');
-                if (savedConfig) {
-                    try {
-                        const config = JSON.parse(savedConfig);
-                        
-                        // 设置基本配置
-                        const userIdListElem = document.getElementById('user-id-list');
-                        if (userIdListElem && config.user_id_list) {
-                            // 确保将数组格式转换为逗号分隔的字符串
-                            const userIdStr = Array.isArray(config.user_id_list) 
-                                ? config.user_id_list.join(', ') 
-                                : String(config.user_id_list);
-                            userIdListElem.value = userIdStr;
-                            console.log('已设置user_id_list值:', userIdStr);
-                        }
-                        
-                        const queryListElem = document.getElementById('query-list');
-                        if (queryListElem && config.query_list) queryListElem.value = config.query_list;
-                        
-                        const onlyCrawlOriginalElem = document.getElementById('only-crawl-original');
-                        if (onlyCrawlOriginalElem && config.only_crawl_original !== undefined) onlyCrawlOriginalElem.value = config.only_crawl_original;
-                        
-                        const sinceDateElem = document.getElementById('since-date-days');
-                        if (sinceDateElem && config.since_date) {
-                            sinceDateElem.value = config.since_date;
-                            console.log('已设置since_date值:', config.since_date);
-                        }
-                        
-                        const cookieElem = document.getElementById('cookie');
-                        if (cookieElem && config.cookie) cookieElem.value = config.cookie;
-                        
-                        // 设置写入模式
-                        if (config.write_mode) {
-                            const writeCsvElem = document.getElementById('write-csv');
-                            if (writeCsvElem) writeCsvElem.checked = config.write_mode.includes('csv');
-                            
-                            const writeJsonElem = document.getElementById('write-json');
-                            if (writeJsonElem) writeJsonElem.checked = config.write_mode.includes('json');
-                            
-                            const writeSqliteElem = document.getElementById('write-sqlite');
-                            if (writeSqliteElem) writeSqliteElem.checked = config.write_mode.includes('sqlite');
-                            
-                            const writeMySqlElem = document.getElementById('write-mysql');
-                            if (writeMySqlElem) writeMySqlElem.checked = config.write_mode.includes('mysql');
-                        }
-                        
-                        // 设置下载选项
-                        const originalPicElem = document.getElementById('original-pic');
-                        if (originalPicElem && config.original_pic_download !== undefined) originalPicElem.checked = config.original_pic_download === 1;
-                        
-                        const retweetPicElem = document.getElementById('retweet-pic');
-                        if (retweetPicElem && config.retweet_pic_download !== undefined) retweetPicElem.checked = config.retweet_pic_download === 1;
-                        
-                        const originalVideoElem = document.getElementById('original-video');
-                        if (originalVideoElem && config.original_video_download !== undefined) originalVideoElem.checked = config.original_video_download === 1;
-                        
-                        const retweetVideoElem = document.getElementById('retweet-video');
-                        if (retweetVideoElem && config.retweet_video_download !== undefined) retweetVideoElem.checked = config.retweet_video_download === 1;
-                        
-                        const downloadCommentElem = document.getElementById('download-comment');
-                        if (downloadCommentElem && config.download_comment !== undefined) downloadCommentElem.checked = config.download_comment === 1;
-                        
-                        const downloadRepostElem = document.getElementById('download-repost');
-                        if (downloadRepostElem && config.download_repost !== undefined) downloadRepostElem.checked = config.download_repost === 1;
-                        
-                        // 设置其他选项
-                        const removeHtmlTagElem = document.getElementById('remove-html-tag');
-                        if (removeHtmlTagElem && config.remove_html_tag !== undefined) removeHtmlTagElem.checked = config.remove_html_tag === 1;
-                        
-                        const userIdAsFolderElem = document.getElementById('user-id-as-folder');
-                        if (userIdAsFolderElem && config.user_id_as_folder_name !== undefined) userIdAsFolderElem.checked = config.user_id_as_folder_name === 1;
-                        
-                        // 设置MySQL配置
-                        if (config.mysql_config) {
-                            const mysqlHostElem = document.getElementById('mysql-host');
-                            if (mysqlHostElem && config.mysql_config.host) mysqlHostElem.value = config.mysql_config.host;
-                            
-                            const mysqlPortElem = document.getElementById('mysql-port');
-                            if (mysqlPortElem && config.mysql_config.port) mysqlPortElem.value = config.mysql_config.port;
-                            
-                            const mysqlUserElem = document.getElementById('mysql-user');
-                            if (mysqlUserElem && config.mysql_config.user) mysqlUserElem.value = config.mysql_config.user;
-                            
-                            const mysqlPasswordElem = document.getElementById('mysql-password');
-                            if (mysqlPasswordElem && config.mysql_config.password) mysqlPasswordElem.value = config.mysql_config.password;
-                            
-                            const mysqlCharsetElem = document.getElementById('mysql-charset');
-                            if (mysqlCharsetElem && config.mysql_config.charset) mysqlCharsetElem.value = config.mysql_config.charset;
-                        }
-                        
-                        // 设置MongoDB配置
-                        const mongodbUriElem = document.getElementById('mongodb-uri');
-                        if (mongodbUriElem && config.mongodb_URI) mongodbUriElem.value = config.mongodb_URI;
-                        
-                        // 设置定期爬取配置
-                        if (config.schedule_config) {
-                            const enableScheduleElem = document.getElementById('enable-schedule');
-                            if (enableScheduleElem && config.schedule_config.enabled !== undefined) enableScheduleElem.checked = config.schedule_config.enabled;
-                            
-                            if (config.schedule_config.frequency) {
-                                try {
-                                    const freqInput = document.querySelector(`input[name="schedule-frequency"][value="${config.schedule_config.frequency}"]`);
-                                    if (freqInput) freqInput.checked = true;
-                                } catch (err) {
-                                    console.error('设置爬取频率时出错:', err);
-                                }
-                            }
-                            
-                            const customIntervalElem = document.getElementById('custom-interval');
-                            if (customIntervalElem && config.schedule_config.custom_interval) customIntervalElem.value = config.schedule_config.custom_interval;
-                        }
-                        
-                        console.log('已从本地存储加载配置');
-                    } catch (e) {
-                        console.error('加载保存的配置失败:', e);
-                    }
-                }
-            }
-        }
-        
-        // 初始化时加载保存的配置
-        (async function() {
-            await loadSavedConfig();
-        })();
-        
-        // 读取配置按钮点击事件
-        document.addEventListener('DOMContentLoaded', () => {
-            // 创建读取配置按钮
-            const configSection = document.querySelector('#config');
-            if (configSection) {
-                const sectionHeader = configSection.querySelector('h2');
-                if (sectionHeader) {
-                    const readConfigBtn = document.createElement('button');
-                    readConfigBtn.id = 'read-config';
-                    readConfigBtn.className = 'ml-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors';
-                    readConfigBtn.textContent = '读取配置';
-                    readConfigBtn.onclick = async () => {
-                        addLog('[INFO] 正在读取配置...', 'info');
-                        await loadSavedConfig();
-                        addLog('[INFO] 配置读取完成', 'info');
-                    };
-                    sectionHeader.parentNode.insertBefore(readConfigBtn, sectionHeader.nextSibling);
-                }
-            }
-        });
-
-        // 开始爬取任务
-        document.getElementById('start-task').addEventListener('click', async () => {
-            const startBtn = document.getElementById('start-task');
-            const stopBtn = document.getElementById('stop-task');
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            const progressStatus = document.getElementById('progress-status');
-            const statusIndicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-            const taskLog = document.getElementById('task-log');
-            
-            // 更新按钮状态
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            
-            // 更新状态指示器
-            statusIndicator.className = 'inline-block w-3 h-3 bg-success rounded-full animate-pulse';
-            statusText.textContent = '运行中';
-            
-            // 重置进度和日志
-            progressBar.style.width = '0%';
-            progressText.textContent = '0%';
-            progressStatus.textContent = '开始爬取...';
-            taskLog.innerHTML = '';
-            
-            // 添加开始日志
-            addLog('[INFO] 开始爬取微博数据...', 'info');
-            
-            try {
-                // 调用后端API开始任务
-                const response = await fetch('/refresh', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`API响应错误: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                const taskId = data.task_id;
-                // 保存任务ID到localStorage，用于页面刷新后恢复状态
-                localStorage.setItem('lastTaskId', taskId);
-                addLog(`[INFO] 任务已创建，ID: ${taskId}`, 'info');
-                
-                // 轮询任务状态
-                const checkStatus = async () => {
-                    try {
-                        // 添加超时的fetch请求
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
-                        
-                        const statusResponse = await fetch(`/task/${taskId}`, {
-                            signal: controller.signal
-                        });
-                        clearTimeout(timeoutId);
-                        
-                        if (!statusResponse.ok) {
-                            throw new Error(`HTTP错误! 状态: ${statusResponse.status}`);
-                        }
-                        
-                        const taskStatus = await statusResponse.json();
-                        
-                        // 更新进度
-                        if (taskStatus.progress !== undefined) {
-                            progressBar.style.width = `${taskStatus.progress}%`;
-                            progressText.textContent = `${taskStatus.progress}%`;
-                        }
-                        
-                        // 更新状态文本
-                        if (taskStatus.state === 'PROGRESS') {
-                            if (taskStatus.progress < 50) {
-                                progressStatus.textContent = '正在爬取数据...';
-                            } else {
-                                progressStatus.textContent = '正在处理结果...';
-                            }
-                        } else if (taskStatus.state === 'SUCCESS' || taskStatus.state === 'COMPLETED') {
-                            progressStatus.textContent = '任务完成';
-                            progressBar.style.width = '100%';
-                            progressText.textContent = '100%';
-                            addLog('[INFO] 所有用户爬取完成', 'info');
-                            addLog('[INFO] 任务执行成功', 'info');
-                            
-                            // 更新按钮状态
-                            startBtn.disabled = false;
-                            stopBtn.disabled = true;
-                            statusIndicator.className = 'inline-block w-3 h-3 bg-success rounded-full';
-                            statusText.textContent = '已完成';
-                            return;
-                        } else if (taskStatus.state === 'FAILED') {
-                            progressStatus.textContent = '任务失败';
-                            addLog(`[ERROR] 任务执行失败: ${taskStatus.error}`, 'error');
-                            
-                            // 更新按钮状态
-                            startBtn.disabled = false;
-                            stopBtn.disabled = true;
-                            statusIndicator.className = 'inline-block w-3 h-3 bg-error rounded-full';
-                            statusText.textContent = '已失败';
-                            return;
-                        }
-                        
-                        // 继续轮询
-                        setTimeout(checkStatus, 1000);
-                    } catch (error) {
-                        if (error.name === 'AbortError') {
-                            addLog('[ERROR] 获取任务状态超时，请检查服务是否正常运行', 'error');
-                        } else {
-                            addLog(`[ERROR] 获取任务状态失败: ${error.message}`, 'error');
-                        }
-                        startBtn.disabled = false;
-                        stopBtn.disabled = true;
-                        statusIndicator.className = 'inline-block w-3 h-3 bg-error rounded-full';
-                        statusText.textContent = '已失败';
-                    }
-                };
-                
-                // 开始轮询
-                setTimeout(checkStatus, 1000);
-                
-            } catch (error) {
-                addLog(`[ERROR] 创建任务失败: ${error.message}`, 'error');
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                statusIndicator.className = 'inline-block w-3 h-3 bg-error rounded-full';
-                statusText.textContent = '已失败';
-            }
-        });
-        
-        // 添加日志辅助函数
-        function addLog(message, level = 'info') {
-            // 添加时间戳
-            const now = new Date();
-            const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            const logText = `[${timestamp}] ${message}`;
-            
-            const taskLog = document.getElementById('task-log');
-            const logItem = document.createElement('div');
-            logItem.textContent = logText;
-            
-            // 根据日志级别设置颜色
-            if (level === 'info') {
-                logItem.className = 'text-green-600 dark:text-green-400';
-            } else if (level === 'warning') {
-                logItem.className = 'text-yellow-600 dark:text-yellow-400';
-            } else if (level === 'error') {
-                logItem.className = 'text-red-600 dark:text-red-400';
-            }
-            
-            taskLog.appendChild(logItem);
-            taskLog.scrollTop = taskLog.scrollHeight;
-            
-            // 同时更新logs-content区域
-            const logsContent = document.getElementById('logs-content');
-            if (logsContent) {
-                const logItemClone = logItem.cloneNode(true);
-                logsContent.appendChild(logItemClone);
-                logsContent.scrollTop = logsContent.scrollHeight;
-            }
-        }
-
-        // 停止爬取任务
-        document.getElementById('stop-task').addEventListener('click', async () => {
-            const startBtn = document.getElementById('start-task');
-            const stopBtn = document.getElementById('stop-task');
-            const statusIndicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-            const progressStatus = document.getElementById('progress-status');
-            
-            // 更新按钮状态
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            
-            try {
-                // 调用后端API停止任务
-                const response = await fetch('/task/cancel', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    addLog('[INFO] 任务已成功停止', 'info');
-                } else {
-                    addLog('[WARNING] 停止任务时发生错误', 'warning');
-                }
-            } catch (error) {
-                addLog(`[ERROR] 停止任务失败: ${error.message}`, 'error');
-            }
-            
-            // 更新状态
-            statusIndicator.className = 'inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full';
-            statusText.textContent = '已停止';
-            progressStatus.textContent = '任务已停止';
-            
-            // 日志已通过addLog函数添加，无需重复添加
-        });
-
-        // 清空日志
-        document.getElementById('clear-logs').addEventListener('click', () => {
-            document.getElementById('logs-content').innerHTML = '';
-        });
-
-        // 刷新结果
-        document.getElementById('refresh-results').addEventListener('click', () => {
-            // 模拟刷新
-            loadMockData();
-            alert('结果已刷新！');
-        });
-
-        // 恢复任务状态函数
-        async function restoreTaskState() {
-            try {
-                // 首先检查服务端是否有正在运行的任务
-                const currentTaskResponse = await fetch('/task/current');
-                if (currentTaskResponse.ok) {
-                    const currentTaskData = await currentTaskResponse.json();
-                    
-                    // 如果有运行中的任务
-                    if (currentTaskData.task_id && currentTaskData.state === 'PROGRESS') {
-                        const taskId = currentTaskData.task_id;
-                        localStorage.setItem('lastTaskId', taskId); // 更新localStorage中的taskId
-                        addLog(`[INFO] 发现服务端正在运行的任务，任务ID: ${taskId}`, 'info');
-                        
-                        // 初始化轮询更新任务状态
-                        initializeTaskMonitoring(taskId, currentTaskData);
-                        return;
-                    }
-                }
-                
-                // 如果没有正在运行的任务，尝试从localStorage恢复最近的任务状态
-                const taskId = localStorage.getItem('lastTaskId');
-                if (taskId) {
-                    addLog(`[INFO] 正在从本地存储恢复任务状态，任务ID: ${taskId}`, 'info');
-                    
-                    // 获取任务状态
-                    const response = await fetch(`/task/${taskId}`);
-                    if (response.ok) {
-                        const taskStatus = await response.json();
-                        
-                        // 更新UI状态
-                        updateUIWithTaskStatus(taskId, taskStatus);
-                    } else {
-                        addLog('[WARNING] 无法获取任务状态，可能已过期', 'warning');
-                        localStorage.removeItem('lastTaskId');
-                    }
-                }
-            } catch (error) {
-                console.error('恢复任务状态失败:', error);
-                addLog(`[ERROR] 恢复任务状态失败: ${error.message}`, 'error');
-            }
-        }
-        
-        // 初始化任务监控
-        function initializeTaskMonitoring(taskId, initialStatus) {
-            // 更新UI状态
-            updateUIWithTaskStatus(taskId, initialStatus);
-            
-            // 如果任务仍在进行中，开始轮询
-            if (initialStatus.state === 'PROGRESS') {
-                const checkStatus = async () => {
-                    try {
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), 5000);
-                        
-                        const statusResponse = await fetch(`/task/${taskId}`, {
-                            signal: controller.signal
-                        });
-                        clearTimeout(timeoutId);
-                        
-                        if (statusResponse.ok) {
-                            const currentStatus = await statusResponse.json();
-                            
-                            // 更新进度
-                            const progressBar = document.getElementById('progress-bar');
-                            const progressText = document.getElementById('progress-text');
-                            const progressStatus = document.getElementById('progress-status');
-                            
-                            if (currentStatus.progress !== undefined) {
-                                progressBar.style.width = `${currentStatus.progress}%`;
-                                progressText.textContent = `${currentStatus.progress}%`;
-                            }
-                            
-                            // 处理实时日志更新
-                            if (currentStatus.logs && Array.isArray(currentStatus.logs)) {
-                                // 获取当前已显示的日志行数
-                                const taskLog = document.getElementById('task-log');
-                                const currentLogCount = taskLog.children.length;
-                                
-                                // 只添加新的日志
-                                if (currentStatus.logs.length > currentLogCount) {
-                                    const newLogs = currentStatus.logs.slice(currentLogCount);
-                                    newLogs.forEach(log => {
-                                        // 格式化时间戳
-                                        const date = new Date(log.timestamp);
-                                        const formattedTime = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
-                                        addLog(`[${formattedTime}] ${log.message}`, log.level);
-                                    });
-                                }
-                            }
-                            
-                            // 更新状态文本
-                            if (currentStatus.state === 'PROGRESS') {
-                                if (currentStatus.progress < 50) {
-                                    progressStatus.textContent = '正在爬取数据...';
-                                } else {
-                                    progressStatus.textContent = '正在处理结果...';
-                                }
-                                setTimeout(checkStatus, 1000);
-                            } else if (currentStatus.state === 'SUCCESS' || currentStatus.state === 'COMPLETED') {
-                                progressStatus.textContent = '任务完成';
-                                progressBar.style.width = '100%';
-                                progressText.textContent = '100%';
-                                addLog('[INFO] 所有用户爬取完成', 'info');
-                                addLog('[INFO] 任务执行成功', 'info');
-                                
-                                // 更新按钮状态
-                                const startBtn = document.getElementById('start-task');
-                                const stopBtn = document.getElementById('stop-task');
-                                const statusIndicator = document.getElementById('status-indicator');
-                                const statusText = document.getElementById('status-text');
-                                
-                                startBtn.disabled = false;
-                                stopBtn.disabled = true;
-                                statusIndicator.className = 'inline-block w-3 h-3 bg-success rounded-full';
-                                statusText.textContent = '已完成';
-                            } else if (currentStatus.state === 'FAILED') {
-                                progressStatus.textContent = '任务失败';
-                                addLog(`[ERROR] 任务执行失败: ${currentStatus.error}`, 'error');
-                                
-                                // 更新按钮状态
-                                const startBtn = document.getElementById('start-task');
-                                const stopBtn = document.getElementById('stop-task');
-                                const statusIndicator = document.getElementById('status-indicator');
-                                const statusText = document.getElementById('status-text');
-                                
-                                startBtn.disabled = false;
-                                stopBtn.disabled = true;
-                                statusIndicator.className = 'inline-block w-3 h-3 bg-error rounded-full';
-                                statusText.textContent = '已失败';
-                            } else if (currentStatus.state === 'CANCELLED') {
-                                progressStatus.textContent = '任务已取消';
-                                addLog('[INFO] 任务已被取消', 'info');
-                                
-                                // 更新按钮状态
-                                const startBtn = document.getElementById('start-task');
-                                const stopBtn = document.getElementById('stop-task');
-                                const statusIndicator = document.getElementById('status-indicator');
-                                const statusText = document.getElementById('status-text');
-                                
-                                startBtn.disabled = false;
-                                stopBtn.disabled = true;
-                                statusIndicator.className = 'inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full';
-                                statusText.textContent = '已取消';
-                            }
-                        }
-                    } catch (error) {
-                        if (error.name === 'AbortError') {
-                            addLog('[ERROR] 获取任务状态超时，请检查服务是否正常运行', 'error');
-                        } else {
-                            addLog(`[ERROR] 获取任务状态失败: ${error.message}`, 'error');
-                        }
-                    }
-                };
-                
-                setTimeout(checkStatus, 1000);
-            }
-        }
-        
-        // 更新UI显示任务状态
-        function updateUIWithTaskStatus(taskId, taskStatus) {
-            // 更新UI状态
-            const startBtn = document.getElementById('start-task');
-            const stopBtn = document.getElementById('stop-task');
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            const progressStatus = document.getElementById('progress-status');
-            const statusIndicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-            
-            // 更新进度
-            if (taskStatus.progress !== undefined) {
-                progressBar.style.width = `${taskStatus.progress}%`;
-                progressText.textContent = `${taskStatus.progress}%`;
-                addLog(`[INFO] 任务状态恢复成功，当前进度: ${taskStatus.progress}%`, 'info');
-            }
-            
-            // 更新状态和按钮
-            if (taskStatus.state === 'PROGRESS') {
-                // 任务仍在进行中
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                statusIndicator.className = 'inline-block w-3 h-3 bg-success rounded-full animate-pulse';
-                statusText.textContent = '运行中';
-                
-                if (taskStatus.progress < 50) {
-                    progressStatus.textContent = '正在爬取数据...';
-                } else {
-                    progressStatus.textContent = '正在处理结果...';
-                }
-            } else if (taskStatus.state === 'SUCCESS' || taskStatus.state === 'COMPLETED') {
-                // 任务已完成
-                progressStatus.textContent = '任务完成';
-                progressBar.style.width = '100%';
-                progressText.textContent = '100%';
-                
-                // 更新按钮状态
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                statusIndicator.className = 'inline-block w-3 h-3 bg-success rounded-full';
-                statusText.textContent = '已完成';
-                
-                addLog('[INFO] 发现已完成的任务', 'info');
-            } else if (taskStatus.state === 'FAILED') {
-                // 任务已失败
-                progressStatus.textContent = '任务失败';
-                
-                // 更新按钮状态
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                statusIndicator.className = 'inline-block w-3 h-3 bg-error rounded-full';
-                statusText.textContent = '已失败';
-                
-                addLog(`[INFO] 发现失败的任务: ${taskStatus.error || ''}`, 'info');
-            } else if (taskStatus.state === 'CANCELLED') {
-                // 任务已取消
-                progressStatus.textContent = '任务已取消';
-                
-                // 更新按钮状态
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
-                statusIndicator.className = 'inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full';
-                statusText.textContent = '已取消';
-                
-                addLog('[INFO] 发现已取消的任务', 'info');
-            }
-        }
-
-        // 初始化页面
-        document.addEventListener('DOMContentLoaded', () => {
-            // 确保DOM加载完成后读取配置
-            loadSavedConfig();
-            loadMockData();
-            
-            // 尝试恢复任务状态
-            restoreTaskState();
-            
-            // 清空日志按钮功能
-            if (document.getElementById('clear-logs')) {
-                document.getElementById('clear-logs').addEventListener('click', function() {
-                    const taskLog = document.getElementById('task-log');
-                    const logsContent = document.getElementById('logs-content');
-                    if (taskLog) taskLog.innerHTML = '';
-                    if (logsContent) logsContent.innerHTML = '';
-                    addLog('日志已清空');
-                });
-            }
-            
-            // 添加平滑滚动
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({ behavior: 'smooth' });
-                    }
-                });
+            // 生成结果列表HTML
+            let resultsHtml = '';
+            mockResults.forEach(result => {
+                resultsHtml += `
+                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                        <td class="py-3 px-4"><div class="flex items-center"><div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mr-2"><i class="fa fa-user text-blue-500"></i></div> ${result.user}</div></td>
+                        <td class="py-3 px-4">${result.weiboCount}</td>
+                        <td class="py-3 px-4">${result.fileCount}</td>
+                        <td class="py-3 px-4">${result.lastUpdate}</td>
+                        <td class="py-3 px-4">
+                            <button class="px-3 py-1 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm mr-2">
+                                <i class="fa fa-folder-open mr-1"></i>文件
+                            </button>
+                            <button class="px-3 py-1 bg-success text-white rounded-lg hover:bg-success/90 transition-colors text-sm mr-2">
+                                <i class="fa fa-picture-o mr-1"></i>图片
+                            </button>
+                            <button class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm">
+                                <i class="fa fa-download mr-1"></i>下载
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
+            
+            resultsTable.innerHTML = resultsHtml;
         });
+    </script>
+    <!-- Cookie获取步骤弹窗 -->
+    <div id="cookie-steps-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" style="display: none;">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-semibold">微博Cookie获取步骤</h3>
+                <button id="close-cookie-steps" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" onclick="closeCookieStepsModal()">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+                <div class="prose dark:prose-invert max-w-none">
+                    <h4 class="text-lg font-semibold mb-4">如何获取微博Cookie</h4>
+                    <ol class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 mt-0.5">1</span>
+                            <div>
+                                <p class="font-medium">用Chrome打开微博登录页面</p>
+                                <p class="text-gray-600 dark:text-gray-300">在浏览器中访问：<a href="https://passport.weibo.cn/signin/login" target="_blank" class="text-primary hover:underline">https://passport.weibo.cn/signin/login</a></p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 mt-0.5">2</span>
+                            <div>
+                                <p class="font-medium">输入微博的用户名、密码，登录</p>
+                                <p class="text-gray-600 dark:text-gray-300">登录成功后会跳转到：<a href="https://m.weibo.cn" target="_blank" class="text-primary hover:underline">https://m.weibo.cn</a></p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 mt-0.5">3</span>
+                            <div>
+                                <p class="font-medium">打开Chrome开发者工具并访问weibo.cn</p>
+                                <p class="text-gray-600 dark:text-gray-300">
+                                    按F12键打开Chrome开发者工具，在地址栏输入并跳转到：<a href="https://weibo.cn" target="_blank" class="text-primary hover:underline">https://weibo.cn</a>
+                                </p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-3 mt-0.5">4</span>
+                            <div>
+                                <p class="font-medium">获取Cookie值</p>
+                                <p class="text-gray-600 dark:text-gray-300">
+                                    依此点击Chrome开发者工具中的：<br>
+                                    <strong>Network</strong> → <strong>Name</strong>中的weibo.cn → <strong>Headers</strong> → <strong>Request Headers</strong><br>
+                                    "Cookie:"后的值即为我们要找的cookie值，复制即可。
+                                </p>
+                            </div>
+                        </li>
+                    </ol>
+                    <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                        <h5 class="font-medium text-blue-800 dark:text-blue-300">注意事项</h5>
+                        <ul class="mt-2 space-y-2 text-blue-700 dark:text-blue-400">
+                            <li class="flex items-start">
+                                <i class="fa fa-info-circle mr-2 mt-1"></i>
+                                <span>Cookie有效期一般为7天，请定期更新</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-info-circle mr-2 mt-1"></i>
+                                <span>请勿将获取到的Cookie分享给他人，以免账号被盗</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa fa-info-circle mr-2 mt-1"></i>
+                                <span>如果无法获取Cookie，请尝试清除浏览器缓存后重新登录</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie获取步骤相关JavaScript -->
+    <script>
+        // 显示Cookie获取步骤弹窗
+        function showCookieStepsModal() {
+            document.getElementById('cookie-steps-modal').style.display = 'flex';
+        }
+
+        // 关闭Cookie获取步骤弹窗
+        function closeCookieStepsModal() {
+            document.getElementById('cookie-steps-modal').style.display = 'none';
+        }
     </script>
 </body>
 </html>

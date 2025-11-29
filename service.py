@@ -47,6 +47,8 @@ DEFAULT_CONFIG = {
     "retweet_pic_download": 0,
     "original_video_download": 0,
     "retweet_video_download": 0,
+    "original_live_photo_download": 0,
+    "retweet_live_photo_download": 0,
     "download_comment": 0,
     "comment_max_download_count": 100,
     "download_repost": 0,
@@ -513,6 +515,41 @@ def refresh():
         logger.exception("启动任务失败")
         return jsonify({"error": str(e)}), 500
 
+# 保存配置
+@app.route('/config', methods=['POST'])
+def save_config_api():
+    """保存配置"""
+    try:
+        global config
+        config_data = request.get_json()
+        
+        # 更新配置
+        config = {**DEFAULT_CONFIG, **config_data}
+        
+        # 确保user_id_list是列表
+        if 'user_id_list' in config and isinstance(config['user_id_list'], str):
+            config['user_id_list'] = [uid.strip() for uid in config['user_id_list'].split(',') if uid.strip()]
+        
+        # 保存配置到文件
+        save_config_file()
+        
+        return jsonify({"message": "配置已保存"}), 200
+    except Exception as e:
+        logger.exception("保存配置失败")
+        return jsonify({"error": str(e)}), 500
+
+# 获取配置
+@app.route('/config', methods=['GET'])
+def get_config_api():
+    """获取配置"""
+    try:
+        if not config:
+            load_config_file()
+        return jsonify(config), 200
+    except Exception as e:
+        logger.exception("获取配置失败")
+        return jsonify({"error": str(e)}), 500
+
 # 重新加载配置
 @app.route('/config/reload', methods=['POST'])
 def reload_config():
@@ -529,6 +566,152 @@ def reload_config():
 def index():
     """首页"""
     return render_template('index.html')
+
+# 获取结果列表
+@app.route('/results', methods=['GET'])
+def get_results():
+    """获取结果列表"""
+    try:
+        results = []
+        weibo_dir = os.path.join(BASE_DIR, 'weibo')
+        
+        # 遍历weibo目录下的所有文件夹
+        for uid in os.listdir(weibo_dir):
+            uid_path = os.path.join(weibo_dir, uid)
+            if os.path.isdir(uid_path):
+                # 统计文件数量
+                file_count = 0
+                image_count = 0
+                csv_files = []
+                db_files = []
+                
+                # 遍历用户文件夹下的所有文件
+                for file in os.listdir(uid_path):
+                    file_path = os.path.join(uid_path, file)
+                    if os.path.isfile(file_path):
+                        file_count += 1
+                        # 检查文件类型
+                        if file.endswith('.csv'):
+                            csv_files.append(file)
+                        elif file.endswith('.db'):
+                            db_files.append(file)
+                        # 检查是否为图片文件
+                        elif file.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                            image_count += 1
+                
+                # 获取文件夹的最后修改时间
+                last_update = datetime.fromtimestamp(os.path.getmtime(uid_path)).strftime('%Y-%m-%d %H:%M')
+                
+                # 添加用户数据到结果列表
+                results.append({
+                    'id': uid,
+                    'name': f'用户_{uid}',  # 这里可以根据实际情况从数据库或其他地方获取真实用户名
+                    'weiboCount': 0,  # 这里可以根据实际情况从数据库或文件中获取微博数量
+                    'fileCount': file_count,
+                    'imageCount': image_count,
+                    'lastUpdate': last_update,
+                    'files': [
+                        {'name': f'{uid}_data.csv', 'type': 'csv', 'size': '0 MB'} if csv_files else {},
+                        {'name': f'{uid}_data.db', 'type': 'db', 'size': '0 MB'} if db_files else {}
+                    ]
+                })
+        
+        return jsonify(results), 200
+    except Exception as e:
+        logger.exception("获取结果列表失败")
+        return jsonify({"error": str(e)}), 500
+
+# 微博登录路由
+@app.route('/weibo/login', methods=['POST'])
+def weibo_login():
+    """微博登录获取Cookie"""
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        import re
+        
+        # 获取请求数据
+        login_data = request.get_json()
+        username = login_data.get('username')
+        password = login_data.get('password')
+        
+        if not username or not password:
+            return jsonify({'error': '请提供用户名和密码'}), 400
+        
+        # 创建会话
+        session = requests.Session()
+        
+        # 1. 访问登录页面获取登录所需参数
+        login_url = 'https://passport.weibo.cn/signin/login'
+        response = session.get(login_url)
+        
+        # 解析页面获取vk和其他参数
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 查找vk值
+        vk_input = soup.find('input', {'name': 'vk'})
+        if not vk_input:
+            return jsonify({'error': '无法获取登录参数vk'}), 500
+        vk = vk_input.get('value')
+        
+        # 查找from值
+        from_input = soup.find('input', {'name': 'from'})
+        from_value = from_input.get('value') if from_input else ''
+        
+        # 2. 发送登录请求
+        login_post_url = 'https://passport.weibo.cn/sso/login'
+        login_payload = {
+            'username': username,
+            'password': password,
+            'savestate': '1',
+            'r': 'https://m.weibo.cn/',
+            'ec': '0',
+            'pagerefer': 'https://m.weibo.cn/login?backURL=https%253A%252F%252Fm.weibo.cn%252F',
+            'entry': 'mweibo',
+            'wentry': '',
+            'loginfrom': '',
+            'client_id': '',
+            'code': '',
+            'qq': '',
+            'mainpageflag': '1',
+            'hff': '',
+            'hfp': '',
+            'vk': vk,
+            'from': from_value
+        }
+        
+        login_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Referer': 'https://passport.weibo.cn/signin/login',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        
+        login_response = session.post(login_post_url, data=login_payload, headers=login_headers)
+        login_result = login_response.json()
+        
+        if login_result.get('retcode') != 20000000:
+            return jsonify({'error': f'登录失败: {login_result.get("msg", "未知错误")}'}), 401
+        
+        # 3. 访问微博.cn获取完整Cookie
+        cn_response = session.get('https://weibo.cn')
+        
+        # 4. 提取Cookie
+        cookie_dict = session.cookies.get_dict()
+        cookie_str = '; '.join([f'{k}={v}' for k, v in cookie_dict.items()])
+        
+        if not cookie_str:
+            return jsonify({'error': '无法获取Cookie'}), 500
+        
+        # 5. 保存Cookie到配置
+        global config
+        config['cookie'] = cookie_str
+        save_config_file()
+        
+        return jsonify({'cookie': cookie_str, 'message': '登录成功'}), 200
+        
+    except Exception as e:
+        logger.exception(f"微博登录失败: {e}")
+        return jsonify({'error': f'登录失败: {str(e)}'}), 500
 
 # 静态文件路由
 @app.route('/static/<path:path>')

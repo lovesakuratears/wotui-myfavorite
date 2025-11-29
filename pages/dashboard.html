@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - 我推 - My Favorite</title>
+    <!-- 引入Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 自定义样式 -->
+    <style>
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* 卡片悬停效果 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* 统计卡片动画 */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+    <!-- Tailwind 配置 -->
+    <script>
+        // Tailwind 配置
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#60A5FA',
+                        accent: '#818CF8',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                        info: '#3B82F6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-md">
+        <div class="container mx-auto px-4 flex items-center justify-between h-16">
+            <div class="flex items-center space-x-2">
+                <img src="/static/icons/logo.svg" alt="Logo" class="h-8 w-8">
+                <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">我推 - My Favorite</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all transform hover:scale-110">
+                    <i class="fa fa-moon-o dark:hidden text-gray-600"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-400"></i>
+                </button>
+                <div class="relative">
+                    <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></span>
+                    <span id="status-text" class="ml-2 text-sm text-gray-600 dark:text-gray-300">未运行</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="pt-16 p-6">
+        <!-- 仪表盘区域 -->
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">仪表盘</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-5 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">已爬取用户</p>
+                                <h3 class="text-2xl font-bold mt-1 text-blue-600 dark:text-blue-400" id="user-count">0</h3>
+                            </div>
+                            <div class="p-3 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                                <i class="fa fa-users text-blue-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-5 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">已爬取微博</p>
+                                <h3 class="text-2xl font-bold mt-1 text-green-600 dark:text-green-400" id="weibo-count">0</h3>
+                            </div>
+                            <div class="p-3 bg-green-100 dark:bg-green-900/50 rounded-full">
+                                <i class="fa fa-comment text-green-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 p-5 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">已下载文件</p>
+                                <h3 class="text-2xl font-bold mt-1 text-purple-600 dark:text-purple-400" id="file-count">0</h3>
+                            </div>
+                            <div class="p-3 bg-purple-100 dark:bg-purple-900/50 rounded-full">
+                                <i class="fa fa-download text-purple-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 p-5 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-300 text-sm">任务成功率</p>
+                                <h3 class="text-2xl font-bold mt-1 text-orange-600 dark:text-orange-400" id="success-rate">0%</h3>
+                            </div>
+                            <div class="p-3 bg-orange-100 dark:bg-orange-900/50 rounded-full">
+                                <i class="fa fa-line-chart text-orange-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">爬取趋势</h3>
+                        <div class="h-64">
+                            <canvas id="crawl-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 p-5 rounded-xl shadow-sm">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">最近爬取的用户</h3>
+                        <div class="overflow-y-auto h-64">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="text-left py-2 text-sm font-medium text-gray-600 dark:text-gray-300">用户</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-600 dark:text-gray-300">微博数</th>
+                                        <th class="text-left py-2 text-sm font-medium text-gray-600 dark:text-gray-300">状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-users">
+                                    <tr>
+                                        <td colspan="3" class="text-center py-8 text-gray-500 dark:text-gray-400">暂无数据</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 初始化主题
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // 主题切换
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // 初始化爬取趋势图表
+        const ctx = document.getElementById('crawl-chart').getContext('2d');
+        const crawlChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                datasets: [{
+                    label: '爬取微博数',
+                    data: [120, 190, 300, 500, 270, 430, 360],
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // 模拟数据
+        function loadMockData() {
+            document.getElementById('user-count').textContent = '42';
+            document.getElementById('weibo-count').textContent = '1,256';
+            document.getElementById('file-count').textContent = '58';
+            document.getElementById('success-rate').textContent = '98%';
+            
+            const recentUsersHtml = `
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <td class="py-3 px-4"><div class="flex items-center"><div class="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mr-2"><i class="fa fa-user text-blue-500"></i></div> 迪丽热巴</div></td>
+                    <td class="py-3 px-4">128</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-full text-xs">成功</span></td>
+                </tr>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <td class="py-3 px-4"><div class="flex items-center"><div class="w-6 h-6 rounded-full bg-pink-100 dark:bg-pink-900/50 flex items-center justify-center mr-2"><i class="fa fa-user text-pink-500"></i></div> 郭碧婷</div></td>
+                    <td class="py-3 px-4">85</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-full text-xs">成功</span></td>
+                </tr>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                    <td class="py-3 px-4"><div class="flex items-center"><div class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mr-2"><i class="fa fa-user text-purple-500"></i></div> 杨幂</div></td>
+                    <td class="py-3 px-4">156</td>
+                    <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 rounded-full text-xs">成功</span></td>
+                </tr>
+            `;
+            document.getElementById('recent-users').innerHTML = recentUsersHtml;
+        }
+
+        // 加载模拟数据
+        loadMockData();
+    </script>
+</body>
+</html>

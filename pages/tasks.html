@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务执行 - 我推 - My Favorite</title>
+    <!-- 引入Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 自定义样式 -->
+    <style>
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* 卡片悬停效果 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+    <!-- Tailwind 配置 -->
+    <script>
+        // Tailwind 配置
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#60A5FA',
+                        accent: '#818CF8',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                        info: '#3B82F6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-100 min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-md">
+        <div class="container mx-auto px-4 flex items-center justify-between h-16">
+            <div class="flex items-center space-x-2">
+                <img src="/static/icons/logo.svg" alt="Logo" class="h-8 w-8">
+                <h1 class="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">我推 - My Favorite</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all transform hover:scale-110">
+                    <i class="fa fa-moon-o dark:hidden text-gray-600"></i>
+                    <i class="fa fa-sun-o hidden dark:block text-yellow-400"></i>
+                </button>
+                <div class="relative">
+                    <span id="status-indicator" class="inline-block w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full animate-pulse"></span>
+                    <span id="status-text" class="ml-2 text-sm text-gray-600 dark:text-gray-300">未运行</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="pt-16 p-6">
+        <!-- 任务执行区域 -->
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-card p-6 card-hover">
+                <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">任务执行</h2>
+                <div class="mb-6">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button id="start-task" class="px-6 py-3 bg-gradient-to-r from-success to-green-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 flex-1 flex items-center justify-center">
+                            <i class="fa fa-play mr-2"></i>开始爬取
+                        </button>
+                        <button id="stop-task" class="px-6 py-3 bg-gradient-to-r from-danger to-red-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:scale-105 flex-1 flex items-center justify-center" disabled>
+                            <i class="fa fa-stop mr-2"></i>停止爬取
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">任务进度</h3>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-2 overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-primary to-accent h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-600 dark:text-gray-300">
+                        <span id="progress-text">0%</span>
+                        <span id="progress-status">准备就绪</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">任务日志</h3>
+                    <div id="task-log" class="w-full h-64 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4 overflow-y-auto text-sm font-mono shadow-inner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 初始化主题
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // 主题切换
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // 开始爬取任务
+        document.getElementById('start-task').addEventListener('click', () => {
+            const startBtn = document.getElementById('start-task');
+            const stopBtn = document.getElementById('stop-task');
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const progressStatus = document.getElementById('progress-status');
+            const taskLog = document.getElementById('task-log');
+            
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 10) + 1;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    progressStatus.textContent = '爬取完成';
+                    taskLog.innerHTML += '爬取任务完成！\n';
+                } else {
+                    progressStatus.textContent = '正在爬取...';
+                    taskLog.innerHTML += `进度更新：${progress}%\n`;
+                }
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+            }, 500);
+            
+            // 停止按钮事件
+            stopBtn.addEventListener('click', () => {
+                clearInterval(interval);
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                progressStatus.textContent = '已停止';
+                taskLog.innerHTML += '爬取任务已停止\n';
+            });
+        });
+    </script>
+</body>
+</html>
