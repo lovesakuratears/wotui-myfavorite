@@ -1899,8 +1899,12 @@ class Weibo(object):
                     "-" * 30, self.user["screen_name"], self.user["id"], page, "-" * 30
                 )
             )
+            # 正常执行完毕，返回False表示还没有到达结束条件
+            return False
         except Exception as e:
             logger.exception(e)
+            # 发生异常时返回True表示结束爬取
+            return True
 
     def get_page_count(self):
         """获取微博页数"""
