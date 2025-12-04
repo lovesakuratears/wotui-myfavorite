@@ -40,7 +40,7 @@ function addLog(message, level = 'info') {
 }
 
 // 开始爬取任务
-function startTask() {
+async function startTask() {
   isRunning.value = true
   progress.value = 0
   processedUsers.value = 0
@@ -54,49 +54,113 @@ function startTask() {
   addLog('连接到微博服务器...', 'info')
   addLog('开始处理用户列表...', 'info')
   
-  // 模拟进度更新
-  progressInterval = setInterval(() => {
-    progress.value += Math.floor(Math.random() * 5) + 1
+  try {
+    // 调用后端API开始爬取任务
+    const response = await fetch('/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
     
-    // 随机增加处理的用户和微博数
-    if (Math.random() > 0.7) {
-      processedUsers.value++
-      addLog(`处理用户 #${processedUsers.value} 完成`, 'success')
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
     }
     
-    if (Math.random() > 0.5) {
-      const weiboCount = Math.floor(Math.random() * 20) + 1
-      processedWeibo.value += weiboCount
-      addLog(`爬取到 ${weiboCount} 条微博，累计 ${processedWeibo.value} 条`, 'info')
-    }
+    const data = await response.json()
+    const taskId = data.task_id
     
-    if (progress.value >= 100) {
-      progress.value = 100
-      progressText.value = '100%'
-      progressStatus.value = '爬取完成'
-      addLog('爬取任务完成！', 'success')
-      addLog(`总计处理用户数：${processedUsers.value}`, 'info')
-      addLog(`总计爬取微博数：${processedWeibo.value}`, 'info')
-      addLog('任务执行时间：约 25 秒', 'info')
-      clearInterval(progressInterval)
-      isRunning.value = false
-    } else {
-      progressText.value = `${progress.value}%`
-      addLog(`进度更新：${progress.value}%`, 'info')
-    }
-  }, 1000)
+    addLog(`任务已启动，任务ID: ${taskId}`, 'success')
+    
+    // 轮询获取任务状态和日志
+    const statusInterval = setInterval(async () => {
+      try {
+        const statusResponse = await fetch(`/task/${taskId}`)
+        if (!statusResponse.ok) {
+          throw new Error(`HTTP error! status: ${statusResponse.status}`)
+        }
+        
+        const taskData = await statusResponse.json()
+        
+        // 更新进度
+        if (taskData.progress !== undefined) {
+          progress.value = taskData.progress
+          progressText.value = `${progress.value}%`
+        }
+        
+        // 更新状态
+        if (taskData.state) {
+          if (taskData.state === 'COMPLETED') {
+            progressStatus.value = '爬取完成'
+            clearInterval(statusInterval)
+            isRunning.value = false
+          } else if (taskData.state === 'FAILED') {
+            progressStatus.value = '爬取失败'
+            clearInterval(statusInterval)
+            isRunning.value = false
+          } else {
+            progressStatus.value = '正在爬取...'
+          }
+        }
+        
+        // 更新日志
+        if (taskData.logs && Array.isArray(taskData.logs)) {
+          // 只显示新的日志
+          const currentLogs = taskLog.value
+          taskData.logs.forEach(log => {
+            const logEntry = `<div class="log-entry log-${log.level}">[${new Date(log.timestamp).toLocaleString('zh-CN')}] ${log.message}</div>`
+            if (!currentLogs.includes(logEntry)) {
+              taskLog.value += logEntry
+            }
+          })
+          
+          // 自动滚动到底部
+          setTimeout(() => {
+            const logContainer = document.getElementById('task-log')
+            if (logContainer) {
+              logContainer.scrollTop = logContainer.scrollHeight
+            }
+          }, 100)
+        }
+      } catch (error) {
+        console.error('获取任务状态失败:', error)
+      }
+    }, 1000)
+    
+  } catch (error) {
+    console.error('启动爬取任务失败:', error)
+    addLog(`启动爬取任务失败: ${error.message}`, 'error')
+    isRunning.value = false
+    progressStatus.value = '启动失败'
+  }
 }
 
 // 停止爬取任务
-function stopTask() {
-  isRunning.value = false
-  progressStatus.value = '已停止'
-  addLog('爬取任务已停止', 'warning')
-  addLog(`当前进度：${progress.value}%`, 'info')
-  addLog(`已处理用户数：${processedUsers.value}`, 'info')
-  addLog(`已爬取微博数：${processedWeibo.value}`, 'info')
-  if (progressInterval) {
-    clearInterval(progressInterval)
+async function stopTask() {
+  try {
+    // 调用后端API停止爬取任务
+    const response = await fetch('/task/cancel', {
+      method: 'POST'
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    isRunning.value = false
+    progressStatus.value = '已停止'
+    addLog('爬取任务已停止', 'warning')
+    addLog(`当前进度：${progress.value}%`, 'info')
+    addLog(`已处理用户数：${processedUsers.value}`, 'info')
+    addLog(`已爬取微博数：${processedWeibo.value}`, 'info')
+    
+    if (progressInterval) {
+      clearInterval(progressInterval)
+    }
+  } catch (error) {
+    console.error('停止爬取任务失败:', error)
+    addLog(`停止爬取任务失败: ${error.message}`, 'error')
   }
 }
 

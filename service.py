@@ -33,7 +33,7 @@ logging.config.fileConfig(logging_path)
 logger = logging.getLogger("api")
 
 # 全局变量
-config = {}
+config = None
 
 # 默认配置
 DEFAULT_CONFIG = {
@@ -69,6 +69,8 @@ DEFAULT_CONFIG = {
         "api_token": ""
     }
 }
+
+
 
 # 创建Flask应用
 app = Flask(__name__)
@@ -149,12 +151,21 @@ def run_refresh_task(task_id, user_id_list=None):
         log_message("开始处理任务配置")
         task_config = get_config(user_id_list)
         
+        # 记录配置信息到日志
+        log_message(f"=== 任务配置信息 ===")
+        log_message(f"配置文件路径: {CONFIG_FILE_PATH}")
+        log_message(f"配置内容: {json.dumps(task_config, ensure_ascii=False)}")
+        log_message(f"传入的user_id_list: {user_id_list}")
+        log_message(f"=== 任务配置信息 ===")
+        
         # 初始化任务状态为进行中
         with task_lock:
             if task_id in tasks and isinstance(tasks[task_id], dict):
                 tasks[task_id]['state'] = 'PROGRESS'
                 tasks[task_id]['start_time'] = datetime.now().isoformat()
                 tasks[task_id]['last_activity_time'] = datetime.now().isoformat()
+                # 记录配置信息到任务中
+                tasks[task_id]['config'] = task_config
                 save_tasks_state()
         
         log_message("配置处理完成，准备创建微博爬取对象")
@@ -475,8 +486,12 @@ def get_tasks():
 def refresh():
     """启动刷新任务"""
     try:
-        # 获取请求数据
-        data = request.get_json() or {}
+        # 检查是否有cookie
+        if not config.get('cookie'):
+            return jsonify({"error": "没有配置cookie，任务无法执行，请先配置cookie"}), 400
+        
+        # 获取请求数据，允许空的JSON数据
+        data = request.get_json(silent=True) or {}
         
         # 创建新任务
         task_id = str(uuid.uuid4())
@@ -751,3 +766,6 @@ if __name__ == '__main__':
     # 启动服务
     logger.info("服务启动 (直接运行模式)")
     app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)  # 关闭reloader避免重复启动
+
+# 初始化配置，确保无论服务如何启动，配置都会被正确加载
+load_config_file()

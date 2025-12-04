@@ -1,440 +1,127 @@
 {
-  "bbd3d640-d878-4dfc-adfd-652bb35658db": {
-    "state": "FAILED",
-    "progress": 1,
-    "created_at": "2025-11-30T00:56:20.070725",
+  "439688fc-a5c8-4d20-8fd3-b9ddfc8d1340": {
+    "state": "CANCELLED",
+    "progress": 0,
+    "created_at": "2025-12-04T17:45:08.779868",
     "user_id_list": [
       "5372556014"
     ],
     "logs": [
       {
-        "timestamp": "2025-11-30T00:56:20.070771",
+        "timestamp": "2025-12-04T17:45:08.779892",
         "level": "info",
         "message": "任务已创建，用户列表: ['5372556014']"
       },
       {
-        "timestamp": "2025-11-30T00:56:20.071978",
+        "timestamp": "2025-12-04T17:45:08.780415",
         "level": "info",
         "message": "开始处理任务配置"
       },
       {
-        "timestamp": "2025-11-30T00:56:20.075612",
+        "timestamp": "2025-12-04T17:45:08.781511",
+        "level": "info",
+        "message": "=== 任务配置信息 ==="
+      },
+      {
+        "timestamp": "2025-12-04T17:45:08.781867",
+        "level": "info",
+        "message": "配置文件路径: /www/wwwroot/wotui/config.json"
+      },
+      {
+        "timestamp": "2025-12-04T17:45:08.782230",
+        "level": "info",
+        "message": "配置内容: {\"user_id_list\": [\"5372556014\"], \"query_list\": \"\", \"only_crawl_original\": 1, \"since_date\": \"14\", \"start_page\": 1, \"write_mode\": [\"csv\"], \"original_pic_download\": 1, \"retweet_pic_download\": 1, \"original_video_download\": 0, \"retweet_video_download\": 0, \"original_live_photo_download\": 1, \"retweet_live_photo_download\": 1, \"download_comment\": 0, \"comment_max_download_count\": 100, \"download_repost\": 0, \"repost_max_download_count\": 100, \"user_id_as_folder_name\": 0, \"remove_html_tag\": 1, \"cookie\": \"SCF=AsJgC5Z4ltFM4IwV3J122d5nTBLZn3DCRCuGvGkYnGHlCL_m4KANPFeuqZYMpiBlArUiMlrQ3zNQx035TTFv3_o.; SUB=_2A25ELuzVDeRhGeBH6FQW8S7Oyz2IHXVnQmAdrDV6PUJbktAYLRfikW1NQdHKaSs2NV8V_oAWLX7H7QgjbAbSNGWR; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WF4oGlvjMQGu1CQdLI8lRVs5JpX5KMhUgL.Foq4e0qNeK5Eeh22dJLoIEDKqg_fMJ2LxK-L1K5L12eLxK-LBo5L12qLxKqL1h5LB-2LxK-L1h-LB.Bt; SSOLoginState=1764400261; ALF=1766992261; MLOGIN=1; _T_WM=50991353610; WEIBOCN_FROM=1110006030; XSRF-TOKEN=cd862b; mweibo_short_token=bc3fc8ad4a; M_WEIBOCN_PARAMS=luicode%3D20000174%26uicode%3D20000174\", \"mysql_config\": {\"host\": \"localhost\", \"port\": 3306, \"user\": \"root\", \"password\": \"123456\", \"charset\": \"utf8mb4\"}, \"mongodb_URI\": \"\", \"post_config\": {\"api_url\": \"\", \"api_token\": \"\"}, \"schedule_config\": {\"enabled\": false, \"interval\": \"daily\", \"custom_interval\": 60}}"
+      },
+      {
+        "timestamp": "2025-12-04T17:45:08.782620",
+        "level": "info",
+        "message": "传入的user_id_list: None"
+      },
+      {
+        "timestamp": "2025-12-04T17:45:08.783010",
+        "level": "info",
+        "message": "=== 任务配置信息 ==="
+      },
+      {
+        "timestamp": "2025-12-04T17:45:08.783793",
         "level": "info",
         "message": "配置处理完成，准备创建微博爬取对象"
       },
       {
-        "timestamp": "2025-11-30T00:56:20.077807",
+        "timestamp": "2025-12-04T17:45:08.785146",
         "level": "info",
         "message": "处理配置重命名"
       },
       {
-        "timestamp": "2025-11-30T00:56:50.755287",
-        "level": "error",
-        "message": "服务重启，任务中断"
-      }
-    ],
-    "last_activity_time": "2025-11-30T00:56:20.077836",
-    "start_time": "2025-11-30T00:56:20.074924",
-    "error": "服务重启，任务中断"
-  },
-  "857f2777-db4c-4cfc-8537-8e94f6bc0ff8": {
-    "state": "FAILED",
-    "progress": 59,
-    "created_at": "2025-11-30T00:56:57.274876",
-    "user_id_list": [
-      "5372556014"
-    ],
-    "logs": [
-      {
-        "timestamp": "2025-11-30T00:56:57.274897",
-        "level": "info",
-        "message": "任务已创建，用户列表: ['5372556014']"
-      },
-      {
-        "timestamp": "2025-11-30T00:56:57.276436",
-        "level": "info",
-        "message": "开始处理任务配置"
-      },
-      {
-        "timestamp": "2025-11-30T00:56:57.282209",
+        "timestamp": "2025-12-04T17:45:08.785753",
         "level": "info",
         "message": "配置处理完成，准备创建微博爬取对象"
       },
       {
-        "timestamp": "2025-11-30T00:56:57.284516",
-        "level": "info",
-        "message": "处理配置重命名"
-      },
-      {
-        "timestamp": "2025-11-30T00:56:57.285872",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T00:56:57.294247",
+        "timestamp": "2025-12-04T17:45:08.787128",
         "level": "info",
         "message": "微博爬取对象创建完成，准备开始执行爬取任务"
       },
       {
-        "timestamp": "2025-11-30T00:56:57.295798",
+        "timestamp": "2025-12-04T17:45:08.787778",
         "level": "info",
         "message": "开始执行爬取任务"
       },
       {
-        "timestamp": "2025-11-30T00:56:57.297224",
+        "timestamp": "2025-12-04T17:45:08.788378",
         "level": "info",
         "message": "正在执行爬取操作..."
       },
       {
-        "timestamp": "2025-11-30T00:59:52.749613",
-        "level": "error",
-        "message": "服务重启，任务中断"
+        "timestamp": "2025-12-04T17:46:36.156106",
+        "level": "warning",
+        "message": "任务已取消"
       }
     ],
-    "last_activity_time": "2025-11-30T00:59:51.344461",
-    "start_time": "2025-11-30T00:56:57.281089",
-    "error": "服务重启，任务中断"
-  },
-  "33bf9be4-6744-4269-a86a-d3e1d7802a05": {
-    "state": "FAILED",
-    "progress": 71,
-    "created_at": "2025-11-30T01:00:04.484556",
-    "user_id_list": [
-      "5372556014"
-    ],
-    "logs": [
-      {
-        "timestamp": "2025-11-30T01:00:04.484578",
-        "level": "info",
-        "message": "任务已创建，用户列表: ['5372556014']"
+    "last_activity_time": "2025-12-04T17:46:36.156080",
+    "start_time": "2025-12-04T17:45:08.783369",
+    "config": {
+      "user_id_list": [
+        "5372556014"
+      ],
+      "query_list": "",
+      "only_crawl_original": 1,
+      "since_date": "2025-11-20T00:00:00",
+      "start_page": 1,
+      "write_mode": [
+        "csv"
+      ],
+      "original_pic_download": 1,
+      "retweet_pic_download": 1,
+      "original_video_download": 0,
+      "retweet_video_download": 0,
+      "original_live_photo_download": 1,
+      "retweet_live_photo_download": 1,
+      "download_comment": 0,
+      "comment_max_download_count": 100,
+      "download_repost": 0,
+      "repost_max_download_count": 100,
+      "user_id_as_folder_name": 0,
+      "remove_html_tag": 1,
+      "cookie": "SCF=AsJgC5Z4ltFM4IwV3J122d5nTBLZn3DCRCuGvGkYnGHlCL_m4KANPFeuqZYMpiBlArUiMlrQ3zNQx035TTFv3_o.; SUB=_2A25ELuzVDeRhGeBH6FQW8S7Oyz2IHXVnQmAdrDV6PUJbktAYLRfikW1NQdHKaSs2NV8V_oAWLX7H7QgjbAbSNGWR; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9WF4oGlvjMQGu1CQdLI8lRVs5JpX5KMhUgL.Foq4e0qNeK5Eeh22dJLoIEDKqg_fMJ2LxK-L1K5L12eLxK-LBo5L12qLxKqL1h5LB-2LxK-L1h-LB.Bt; SSOLoginState=1764400261; ALF=1766992261; MLOGIN=1; _T_WM=50991353610; WEIBOCN_FROM=1110006030; XSRF-TOKEN=cd862b; mweibo_short_token=bc3fc8ad4a; M_WEIBOCN_PARAMS=luicode%3D20000174%26uicode%3D20000174",
+      "mysql_config": {
+        "host": "localhost",
+        "port": 3306,
+        "user": "root",
+        "password": "123456",
+        "charset": "utf8mb4"
       },
-      {
-        "timestamp": "2025-11-30T01:00:04.486307",
-        "level": "info",
-        "message": "开始处理任务配置"
+      "mongodb_URI": "",
+      "post_config": {
+        "api_url": "",
+        "api_token": ""
       },
-      {
-        "timestamp": "2025-11-30T01:00:04.491029",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:00:04.492350",
-        "level": "info",
-        "message": "处理配置重命名"
-      },
-      {
-        "timestamp": "2025-11-30T01:00:04.492889",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:00:04.496517",
-        "level": "info",
-        "message": "微博爬取对象创建完成，准备开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:00:04.497208",
-        "level": "info",
-        "message": "开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:00:04.497725",
-        "level": "info",
-        "message": "正在执行爬取操作..."
-      },
-      {
-        "timestamp": "2025-11-30T01:03:37.237106",
-        "level": "error",
-        "message": "服务重启，任务中断"
+      "schedule_config": {
+        "enabled": false,
+        "interval": "daily",
+        "custom_interval": 60
       }
-    ],
-    "last_activity_time": "2025-11-30T01:03:34.590234",
-    "start_time": "2025-11-30T01:00:04.490446",
-    "error": "服务重启，任务中断"
-  },
-  "6d054eb4-293a-4614-b805-1ad740c582bc": {
-    "state": "FAILED",
-    "progress": 70,
-    "created_at": "2025-11-30T01:03:48.936706",
-    "user_id_list": [
-      "5372556014"
-    ],
-    "logs": [
-      {
-        "timestamp": "2025-11-30T01:03:48.936728",
-        "level": "info",
-        "message": "任务已创建，用户列表: ['5372556014']"
-      },
-      {
-        "timestamp": "2025-11-30T01:03:48.938811",
-        "level": "info",
-        "message": "开始处理任务配置"
-      },
-      {
-        "timestamp": "2025-11-30T01:03:48.945423",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:03:48.949700",
-        "level": "info",
-        "message": "处理配置重命名"
-      },
-      {
-        "timestamp": "2025-11-30T01:03:48.951723",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:03:48.962366",
-        "level": "info",
-        "message": "微博爬取对象创建完成，准备开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:03:48.964667",
-        "level": "info",
-        "message": "开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:03:48.966665",
-        "level": "info",
-        "message": "正在执行爬取操作..."
-      },
-      {
-        "timestamp": "2025-11-30T01:07:18.609798",
-        "level": "error",
-        "message": "服务重启，任务中断"
-      }
-    ],
-    "last_activity_time": "2025-11-30T01:07:16.067425",
-    "start_time": "2025-11-30T01:03:48.943456",
-    "error": "服务重启，任务中断"
-  },
-  "f476ff8f-8b06-4081-9a7b-ad2beaa53c87": {
-    "state": "FAILED",
-    "progress": 95,
-    "created_at": "2025-11-30T01:07:50.730626",
-    "user_id_list": [
-      "5372556014"
-    ],
-    "logs": [
-      {
-        "timestamp": "2025-11-30T01:07:50.730636",
-        "level": "info",
-        "message": "任务已创建，用户列表: ['5372556014']"
-      },
-      {
-        "timestamp": "2025-11-30T01:07:50.731876",
-        "level": "info",
-        "message": "开始处理任务配置"
-      },
-      {
-        "timestamp": "2025-11-30T01:07:50.734461",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:07:50.736587",
-        "level": "info",
-        "message": "处理配置重命名"
-      },
-      {
-        "timestamp": "2025-11-30T01:07:50.737634",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:07:50.741979",
-        "level": "info",
-        "message": "微博爬取对象创建完成，准备开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:07:50.743119",
-        "level": "info",
-        "message": "开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:07:50.744259",
-        "level": "info",
-        "message": "正在执行爬取操作..."
-      },
-      {
-        "timestamp": "2025-11-30T01:18:11.515415",
-        "level": "error",
-        "message": "服务重启，任务中断"
-      }
-    ],
-    "last_activity_time": "2025-11-30T01:18:09.140636",
-    "start_time": "2025-11-30T01:07:50.733608",
-    "error": "服务重启，任务中断"
-  },
-  "3d5e6c5f-002a-45c2-9538-c2feecb0f4f1": {
-    "state": "FAILED",
-    "progress": 52,
-    "created_at": "2025-11-30T01:18:21.612351",
-    "user_id_list": [
-      "5372556014"
-    ],
-    "logs": [
-      {
-        "timestamp": "2025-11-30T01:18:21.612358",
-        "level": "info",
-        "message": "任务已创建，用户列表: ['5372556014']"
-      },
-      {
-        "timestamp": "2025-11-30T01:18:21.613456",
-        "level": "info",
-        "message": "开始处理任务配置"
-      },
-      {
-        "timestamp": "2025-11-30T01:18:21.616942",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:18:21.619285",
-        "level": "info",
-        "message": "处理配置重命名"
-      },
-      {
-        "timestamp": "2025-11-30T01:18:21.620562",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:18:21.624858",
-        "level": "info",
-        "message": "微博爬取对象创建完成，准备开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:18:21.626094",
-        "level": "info",
-        "message": "开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:18:21.627324",
-        "level": "info",
-        "message": "正在执行爬取操作..."
-      },
-      {
-        "timestamp": "2025-11-30T01:20:57.104676",
-        "level": "error",
-        "message": "服务重启，任务中断"
-      }
-    ],
-    "last_activity_time": "2025-11-30T01:20:54.739477",
-    "start_time": "2025-11-30T01:18:21.616016",
-    "error": "服务重启，任务中断"
-  },
-  "3f2d2450-bc65-4ce7-b6fb-fad168fa86a9": {
-    "state": "FAILED",
-    "progress": 95,
-    "created_at": "2025-11-30T01:21:06.546669",
-    "user_id_list": [
-      "5372556014"
-    ],
-    "logs": [
-      {
-        "timestamp": "2025-11-30T01:21:06.546680",
-        "level": "info",
-        "message": "任务已创建，用户列表: ['5372556014']"
-      },
-      {
-        "timestamp": "2025-11-30T01:21:06.547680",
-        "level": "info",
-        "message": "开始处理任务配置"
-      },
-      {
-        "timestamp": "2025-11-30T01:21:06.551846",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:21:06.554632",
-        "level": "info",
-        "message": "处理配置重命名"
-      },
-      {
-        "timestamp": "2025-11-30T01:21:06.556090",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:21:06.560702",
-        "level": "info",
-        "message": "微博爬取对象创建完成，准备开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:21:06.562114",
-        "level": "info",
-        "message": "开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:21:06.563556",
-        "level": "info",
-        "message": "正在执行爬取操作..."
-      },
-      {
-        "timestamp": "2025-11-30T01:29:58.410520",
-        "level": "error",
-        "message": "服务重启，任务中断"
-      }
-    ],
-    "last_activity_time": "2025-11-30T01:28:24.972470",
-    "start_time": "2025-11-30T01:21:06.550420",
-    "error": "服务重启，任务中断"
-  },
-  "fbd332a4-1468-4124-b937-02117e68f10d": {
-    "state": "PROGRESS",
-    "progress": 95,
-    "created_at": "2025-11-30T01:30:35.454570",
-    "user_id_list": [
-      "5372556014"
-    ],
-    "logs": [
-      {
-        "timestamp": "2025-11-30T01:30:35.454580",
-        "level": "info",
-        "message": "任务已创建，用户列表: ['5372556014']"
-      },
-      {
-        "timestamp": "2025-11-30T01:30:35.455912",
-        "level": "info",
-        "message": "开始处理任务配置"
-      },
-      {
-        "timestamp": "2025-11-30T01:30:35.459437",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:30:35.461816",
-        "level": "info",
-        "message": "处理配置重命名"
-      },
-      {
-        "timestamp": "2025-11-30T01:30:35.463346",
-        "level": "info",
-        "message": "配置处理完成，准备创建微博爬取对象"
-      },
-      {
-        "timestamp": "2025-11-30T01:30:35.468255",
-        "level": "info",
-        "message": "微博爬取对象创建完成，准备开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:30:35.469825",
-        "level": "info",
-        "message": "开始执行爬取任务"
-      },
-      {
-        "timestamp": "2025-11-30T01:30:35.471366",
-        "level": "info",
-        "message": "正在执行爬取操作..."
-      }
-    ],
-    "last_activity_time": "2025-11-30T01:38:38.943934",
-    "start_time": "2025-11-30T01:30:35.458031"
+    },
+    "error": "任务已取消"
   }
 }

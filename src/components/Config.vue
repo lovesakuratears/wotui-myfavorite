@@ -82,7 +82,7 @@ async function fetchConfig() {
     downloadRepost.value = configData.download_repost === 1
     
     // 高级配置
-    cookie.value = configData.cookie || ''
+    // 不覆盖Cookie，保留用户手动输入的值
     removeHtmlTag.value = configData.remove_html_tag === 1
     userIdAsFolder.value = configData.user_id_as_folder_name === 1
     
@@ -95,23 +95,14 @@ async function fetchConfig() {
     console.log('配置加载成功:', configData)
   } catch (error) {
     console.error('加载配置失败:', error)
-    loadMockData() // 加载失败时使用模拟数据
+    // 提示用户加载配置失败，询问是否重试
+    const retry = confirm('加载配置失败，是否重试？')
+    if (retry) {
+      fetchConfig()
+    } else {
+      console.error('配置加载失败，使用默认配置')
+    }
   }
-}
-
-// 加载模拟数据
-function loadMockData() {
-  // 加载配置数据
-  userIdList.value = '1669879400, 1729370543, 1266321885'
-  sinceDateDays.value = '7'
-  
-  // 加载数据库配置
-  mysqlHost.value = 'localhost'
-  mysqlPort.value = '3306'
-  mysqlUser.value = 'root'
-  mysqlPassword.value = '123456'
-  mysqlCharset.value = 'utf8mb4'
-  mongodbUri.value = 'mongodb://[username:password@]host[:port][/[defaultauthdb][?options]]'
 }
 
 // 保存配置

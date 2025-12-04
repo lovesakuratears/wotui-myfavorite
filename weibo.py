@@ -55,19 +55,7 @@ class Weibo(object):
         self.remove_html_tag = config[
             "remove_html_tag"
         ]  # 取值范围为0、1, 0代表不移除微博中的html tag, 1代表移除
-        since_date = config["since_date"]
-        # since_date 若为整数，则取该天数之前的日期；若为 yyyy-mm-dd，则增加时间
-        if isinstance(since_date, int):
-            since_date = date.today() - timedelta(since_date)
-            since_date = since_date.strftime(DTFORMAT)
-        elif self.is_date(since_date):
-            since_date = "{}T00:00:00".format(since_date)
-        elif self.is_datetime(since_date):
-            pass
-        else:
-            logger.error("since_date 格式不正确，请确认配置是否正确")
-            sys.exit()
-        self.since_date = since_date  # 起始时间，即爬取发布日期从该值到现在的微博，形式为yyyy-mm-ddThh:mm:ss，如：2023-08-21T09:23:03
+        self.since_date = config["since_date"]  # 起始时间，即爬取发布日期从该值到现在的微博，形式为yyyy-mm-ddThh:mm:ss，如：2023-08-21T09:23:03
         self.start_page = config.get("start_page", 1)  # 开始爬的页，如果中途被限制而结束可以用此定义开始页码
         self.write_mode = config[
             "write_mode"
@@ -691,6 +679,10 @@ class Weibo(object):
         params = {"containerid": "100505" + str(self.user_config["user_id"])}
         url = "https://m.weibo.cn/api/container/getIndex"
         
+        logger.info(f"=== 开始获取用户信息 (ID: {self.user_config['user_id']}) ===")
+        logger.info(f"请求URL: {url}")
+        logger.info(f"请求参数: {params}")
+        
         # 这里在读取下一个用户的时候很容易被ban，需要优化休眠时长
         # 加一个count，不需要一上来啥都没干就sleep
         if self.long_sleep_count_before_each_user > 0:
@@ -706,19 +698,31 @@ class Weibo(object):
         backoff_factor = 5  # 指数退避的基数（秒）
         
         while retries < max_retries:
+            logger.info(f"尝试获取用户信息，重试次数: {retries+1}/{max_retries}")
             try:
                 response = self.session.get(url, params=params, headers=self.headers, timeout=10)
+                logger.info(f"请求返回状态码: {response.status_code}")
                 response.raise_for_status()
+                
+                logger.info(f"请求成功，开始解析响应数据")
                 js = response.json()
+                logger.info(f"响应数据结构: {list(js.keys())}")
+                
                 if 'data' in js and 'userInfo' in js['data']:
+                    logger.info(f"成功获取到用户基本信息")
                     info = js["data"]["userInfo"]
                     user_info = OrderedDict()
                     user_info["id"] = self.user_config["user_id"]
                     user_info["screen_name"] = info.get("screen_name", "")
                     user_info["gender"] = info.get("gender", "")
+                    
+                    logger.info(f"用户昵称: {user_info['screen_name']}")
+                    
                     params = {
                         "containerid": "230283" + str(self.user_config["user_id"]) + "_-_INFO"
                     }
+                    logger.info(f"获取用户详细信息，请求URL: {url}，参数: {params}")
+                    
                     zh_list = ["生日", "所在地", "小学", "初中", "高中", "大学", "公司", "注册时间", "阳光信用"]
                     en_list = [
                         "birthday",
@@ -733,16 +737,21 @@ class Weibo(object):
                     ]
                     for i in en_list:
                         user_info[i] = ""
+                    
                     js, _ = self.get_json(params)
+                    logger.info(f"详细信息响应状态: {'成功' if js['ok'] else '失败'}")
+                    
                     if js["ok"]:
                         cards = js["data"]["cards"]
                         if isinstance(cards, list) and len(cards) > 1:
                             card_list = cards[0]["card_group"] + cards[1]["card_group"]
+                            logger.info(f"解析到 {len(card_list)} 个信息卡片")
                             for card in card_list:
                                 if card.get("item_name") in zh_list:
                                     user_info[
                                         en_list[zh_list.index(card.get("item_name"))]
                                     ] = card.get("item_content", "")
+                    
                     user_info["statuses_count"] = self.string_to_int(
                         info.get("statuses_count", 0)
                     )
@@ -759,9 +768,14 @@ class Weibo(object):
                     user_info["verified"] = info.get("verified", False)
                     user_info["verified_type"] = info.get("verified_type", -1)
                     user_info["verified_reason"] = info.get("verified_reason", "")
+                    
                     self.user = self.standardize_info(user_info)
+                    logger.info(f"用户信息标准化完成")
+                    
                     self.user_to_database()
-                    logger.info(f"成功获取到用户 {self.user_config['user_id']} 的信息。")
+                    logger.info(f"用户信息已写入数据库")
+                    
+                    logger.info(f"=== 成功获取到用户 {self.user_config['user_id']} 的信息 ===")
                     return 0
                 else:
                     logger.warning("未能获取到用户信息，可能需要验证码验证。")
@@ -781,6 +795,12 @@ class Weibo(object):
                 retries += 1
                 sleep_time = backoff_factor * (2 ** retries)
                 logger.error(f"JSON 解码失败，错误信息：{ve}。等待 {sleep_time} 秒后重试...")
+                sleep(sleep_time)
+            except Exception as e:
+                retries += 1
+                sleep_time = backoff_factor * (2 ** retries)
+                logger.error(f"获取用户信息时发生未知错误：{e}。等待 {sleep_time} 秒后重试...")
+                logger.exception(e)
                 sleep(sleep_time)
         logger.error("超过最大重试次数，程序将退出。")
         sys.exit("超过最大重试次数，程序已退出。")
@@ -1845,12 +1865,15 @@ class Weibo(object):
                                             )
                                         )
                                     return True
-                                # 上一次标记的微博被删了，就把上一条微博时间记录推前两天，多抓点评论或者微博内容修改
-                                # TODO 更加合理的流程是，即使读取到上次更新微博id，也抓取增量评论，由此获得更多的评论
-                                since_date = datetime.strptime(
-                                    convert_to_days_ago(self.last_weibo_date, 1),
-                                    DTFORMAT,
-                                )
+                                # 只有当last_weibo_date存在且last_weibo_id不为空时，才使用它来计算since_date
+                                # 否则使用配置的since_date，确保since14参数生效
+                                if self.last_weibo_id:
+                                    # 上一次标记的微博被删了，就把上一条微博时间记录推前两天，多抓点评论或者微博内容修改
+                                    # TODO 更加合理的流程是，即使读取到上次更新微博id，也抓取增量评论，由此获得更多的评论
+                                    since_date = datetime.strptime(
+                                        convert_to_days_ago(self.last_weibo_date, 1),
+                                        DTFORMAT,
+                                    )
                             if created_at < since_date:
                                 if self.is_pinned_weibo(w):
                                     continue
@@ -2787,6 +2810,8 @@ class Weibo(object):
     def get_pages(self):
         """获取全部微博"""
         try:
+            logger.info(f"=== 进入get_pages函数，开始爬取微博 ===")
+            
             # 初始化反爬相关变量
             consecutive_432_errors = 0
             max_consecutive_432 = 3
@@ -2799,10 +2824,12 @@ class Weibo(object):
             sleep(initial_delay)
             
             # 用户id不可用
+            logger.info(f"开始获取用户信息...")
             if self.get_user_info() != 0:
+                logger.info(f"获取用户信息失败，退出get_pages函数")
                 return
             
-            logger.info("准备搜集 {} 的微博".format(self.user["screen_name"]))
+            logger.info(f"=== 准备搜集 {self.user['screen_name']} (ID: {self.user_config['user_id']}) 的微博 ===")
             
             if const.MODE == "append" and (
                 "first_crawler" not in self.__dict__ or self.first_crawler is False
@@ -2810,27 +2837,36 @@ class Weibo(object):
                 # 本次运行的某用户首次抓取，用于标记最新的微博id
                 self.first_crawler = True
                 const.CHECK_COOKIE["GUESS_PIN"] = True
+                logger.info(f"设置为首次抓取模式")
             
             since_date = datetime.strptime(self.user_config["since_date"], DTFORMAT)
             today = datetime.today()
+            logger.info(f"since_date配置: {since_date.strftime(DTFORMAT)}")
+            logger.info(f"当前日期: {today.strftime(DTFORMAT)}")
             
             if since_date <= today:    # since_date 若为未来则无需执行
                 page_count = self.get_page_count()
                 # 使用实际获取的页数进行爬取
-                logger.info(f"计划爬取 {page_count} 页内容")
+                logger.info(f"=== 计算得到需要爬取的总页数: {page_count} ===")
                 wrote_count = 0
                 page1 = 0
                 random_pages = random.randint(1, 5)
                 self.start_date = datetime.now().strftime(DTFORMAT)
                 pages = range(self.start_page, page_count + 1)
                 
+                logger.info(f"=== 开始爬取 {len(pages)} 页内容 ===")
+                logger.info(f"爬取范围: 第 {self.start_page} 页到第 {page_count} 页")
+                
                 for page in tqdm(pages, desc="Progress"):
+                    logger.info(f"=== 开始处理第 {page}/{page_count} 页 ===")
                     page_success = False
                     page_retry = 0
                     
                     # 对每个页面实现智能重试机制
                     while page_retry < max_page_retries and not page_success:
                         try:
+                            logger.info(f"第 {page} 页，第 {page_retry+1}/{max_page_retries} 次尝试")
+                            
                             # 检查连续432错误，超过阈值则采取更激进的措施
                             if consecutive_432_errors >= max_consecutive_432:
                                 logger.warning(f"检测到连续 {consecutive_432_errors} 个432错误，采取紧急措施")
@@ -2849,13 +2885,17 @@ class Weibo(object):
                                 consecutive_432_errors = 0
                             
                             # 获取该页数据
+                            logger.info(f"调用get_one_page获取第 {page} 页数据")
                             is_end = self.get_one_page(page)
                             page_success = True
                             consecutive_432_errors = 0  # 重置连续错误计数
                             
+                            logger.info(f"第 {page} 页数据获取成功，is_end={is_end}")
+                            logger.info(f"当前累计获取微博数: {self.got_count}")
+                            
                             # 确保每爬1页就调用write_data函数，不管is_end的值是什么
                             if page % 1 == 0:  # 每爬1页写入一次文件，方便测试
-                                print(f"=== 调用write_data函数，page={page}，got_count={self.got_count}，wrote_count={wrote_count} ===")
+                                logger.info(f"调用write_data函数，page={page}，got_count={self.got_count}，wrote_count={wrote_count}")
                                 self.write_data(wrote_count)
                                 wrote_count = self.got_count
                                 # 写入数据后也添加随机延迟
@@ -2864,6 +2904,7 @@ class Weibo(object):
                                 sleep(data_delay)
                             
                             if is_end:
+                                logger.info(f"检测到结束条件，停止爬取")
                                 break
 
                         except Exception as e:
@@ -2919,12 +2960,17 @@ class Weibo(object):
                         page1 = page
                         # 随机调整下次等待的页面数
                         random_pages = random.randint(2, 6)
+                    
+                    logger.info(f"=== 第 {page}/{page_count} 页处理完成 ===")
 
                 # 最后写入数据
                 if wrote_count < self.got_count:
+                    logger.info(f"最后写入剩余数据，wrote_count={wrote_count}，got_count={self.got_count}")
                     self.write_data(wrote_count)
+            else:
+                logger.info(f"since_date {since_date.strftime(DTFORMAT)} 为未来日期，无需执行爬取")
             
-            logger.info("微博爬取完成，共爬取%d条微博", self.got_count)
+            logger.info(f"=== 微博爬取完成，共爬取 {self.got_count} 条微博 ===")
             
         except Exception as e:
             logger.error(f"get_pages函数执行出错: {str(e)}")
@@ -2982,6 +3028,8 @@ class Weibo(object):
     def start(self):
         """运行爬虫"""
         try:
+            logger.info(f"=== 爬虫启动，进入start函数 ===")
+            
             # 初始随机延迟，模拟真实用户行为
             initial_delay = random.uniform(3, 8)
             logger.info(f"爬虫启动前随机延迟 {initial_delay:.2f} 秒")
@@ -2990,9 +3038,26 @@ class Weibo(object):
             # 记录连续失败次数，用于触发紧急措施
             consecutive_failures = 0
             
+            # 记录总用户数和累计爬取数量
+            total_users = len(self.user_config_list)
+            total_crawled = 0
+            
+            logger.info(f"=== 开始爬取任务 ===")
+            logger.info(f"总用户数: {total_users}")
+            logger.info(f"配置的since_date: {self.since_date}")
+            logger.info(f"配置的only_crawl_original: {self.only_crawl_original}")
+            logger.info(f"配置的write_mode: {self.write_mode}")
+            logger.info(f"配置的original_pic_download: {self.original_pic_download}")
+            logger.info(f"配置的original_video_download: {self.original_video_download}")
+            logger.info(f"=== 开始爬取任务 ===")
+            
             for user_config_idx, user_config in enumerate(self.user_config_list):
                 try:
-                    logger.info(f"处理用户配置 {user_config_idx + 1}/{len(self.user_config_list)}")
+                    user_id = user_config["user_id"]
+                    logger.info(f"=== 处理用户 {user_config_idx + 1}/{total_users} (ID: {user_id}) ===")
+                    
+                    # 记录当前用户的配置信息
+                    logger.info(f"当前用户配置: {json.dumps(user_config, ensure_ascii=False)}")
                     
                     if len(user_config["query_list"]):
                         for query_idx, query in enumerate(user_config["query_list"]):
@@ -3000,6 +3065,11 @@ class Weibo(object):
                             self.initialize_info(user_config)
                             logger.info(f"开始抓取查询: {query}")
                             self.get_pages()
+                            
+                            # 记录当前查询的爬取结果
+                            logger.info(f"查询 {query} 爬取完成，获取到 {self.got_count} 条微博")
+                            total_crawled += self.got_count
+                            logger.info(f"累计爬取微博数: {total_crawled}")
                             
                             # 查询之间添加随机延迟
                             if query_idx < len(user_config["query_list"]) - 1:
@@ -3009,8 +3079,15 @@ class Weibo(object):
                     else:
                         self.initialize_info(user_config)
                         self.get_pages()
+                        
+                        # 记录当前用户的爬取结果
+                        logger.info(f"用户 {user_id} 爬取完成，获取到 {self.got_count} 条微博")
+                        total_crawled += self.got_count
+                        logger.info(f"累计爬取微博数: {total_crawled}")
                     
-                    logger.info("信息抓取完毕")
+                    logger.info(f"=== 用户 {user_id} 信息抓取完毕 ===")
+                    logger.info(f"用户 {user_id} 爬取微博数: {self.got_count}")
+                    logger.info(f"累计爬取微博数: {total_crawled}")
                     logger.info("*" * 100)
                     
                     if self.user_config_file_path and self.user:
@@ -3027,7 +3104,7 @@ class Weibo(object):
                     
                 except Exception as e:
                     consecutive_failures += 1
-                    logger.error(f"处理用户配置时出错: {str(e)}")
+                    logger.error(f"处理用户 {user_id} 时出错: {str(e)}")
                     logger.exception(e)
                     
                     # 失败处理策略
@@ -3057,6 +3134,8 @@ class Weibo(object):
             final_delay = random.uniform(60, 120)
             logger.info(f"最终恢复延迟 {final_delay:.2f} 秒")
             sleep(final_delay)
+        finally:
+            logger.info(f"=== 爬虫任务结束，共处理 {total_users} 个用户，累计爬取 {total_crawled} 条微博 ===")
 
 
 def handle_config_renaming(config, oldName, newName):
