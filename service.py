@@ -5,8 +5,6 @@ import logging.config
 import os
 import json
 import uuid
-import logging
-import logging.config
 import threading
 import time
 from datetime import datetime
